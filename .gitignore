@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/ScoreboardTracker/ScoreboardTracker/bin/
+/ScoreboardTracker/ScoreboardTracker/obj
+/ScoreboardTracker/ScoreboardTracker.Android/obj
+/ScoreboardTracker/ScoreboardTracker.Android/bin
+/ScoreboardTracker/ScoreboardTracker.iOS/bin
+/ScoreboardTracker/ScoreboardTracker.iOS/obj

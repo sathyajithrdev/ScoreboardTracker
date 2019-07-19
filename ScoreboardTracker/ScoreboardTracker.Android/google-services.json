@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "751645980543",
+    "firebase_url": "https://scoreboardtracker.firebaseio.com",
+    "project_id": "scoreboardtracker",
+    "storage_bucket": "scoreboardtracker.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:751645980543:android:1e677058a4463eff",
+        "android_client_info": {
+          "package_name": "com.saj.android.scoreboardtracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "751645980543-pqg4fp91fokg9b7c34qjl9ji1l235glt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCBVvM_Nf5kMcMryklPQezdF1I6eNgDec4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "751645980543-pqg4fp91fokg9b7c34qjl9ji1l235glt.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
