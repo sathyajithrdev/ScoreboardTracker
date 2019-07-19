@@ -25,6 +25,11 @@ namespace ScoreboardTracker.Models
 
         private List<UserScore> _scores;
 
+        public List<UserScore> getUserScores() {
+            _scores = JsonConvert.DeserializeObject<List<UserScore>>(scoresJson);
+            return _scores;
+        }
+
         public void addUserScore(UserScore userScore)
         {
             if (_scores == null)
