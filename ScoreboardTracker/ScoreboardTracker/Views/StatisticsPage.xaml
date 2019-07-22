@@ -5,6 +5,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
              x:Class="ScoreboardTracker.Views.StatisticsPage"
+             NavigationPage.HasNavigationBar="False"
              xmlns:vm="clr-namespace:ScoreboardTracker.ViewModels"
              Title="{Binding Title}">
     

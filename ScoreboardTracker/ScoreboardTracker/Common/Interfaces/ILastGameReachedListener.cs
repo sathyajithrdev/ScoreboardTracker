@@ -2,8 +2,8 @@
 
 namespace ScoreboardTracker.Common.Interfaces
 {
-    public interface ILastGameReachedListener
+    public interface ILastSetReachedListener
     {
-        void onLastGameReached(UserScore firstUser, UserScore secondUser, string message);
+        void onLastSetReached(UserScore firstUser, UserScore secondUser, string message);
     }
 }

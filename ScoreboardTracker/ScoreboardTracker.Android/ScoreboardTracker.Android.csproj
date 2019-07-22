@@ -110,12 +110,6 @@
     <Folder Include="Resources\drawable-xxxhdpi\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ScoreboardTracker\ScoreboardTracker.csproj">
-      <Project>{13799488-0EFF-4118-B4DF-D5F0FDA1B81E}</Project>
-      <Name>ScoreboardTracker</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <AndroidResource Include="Resources\layout\HomePage.axml">
       <SubType>Designer</SubType>
     </AndroidResource>
@@ -127,6 +121,18 @@
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\layout\item_score.axml">
+      <SubType>Designer</SubType>
+    </AndroidResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScoreboardTracker\ScoreboardTracker.csproj">
+      <Project>{09cd8224-2637-4959-8def-bdcb8c9aa7c2}</Project>
+      <Name>ScoreboardTracker</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <AndroidResource Include="Resources\layout\item_score_with_text.axml">
+      <Generator>MSBuild:UpdateGeneratedFiles</Generator>
       <SubType>Designer</SubType>
     </AndroidResource>
   </ItemGroup>

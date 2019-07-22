@@ -1,8 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Plugin.CloudFirestore.Attributes;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ScoreboardTracker.Models
 {
@@ -17,16 +15,17 @@ namespace ScoreboardTracker.Models
             set
             {
                 _scoresJson = value;
-                _scores = JsonConvert.DeserializeObject<List<UserScore>>(scoresJson);
+                _scores = JsonConvert.DeserializeObject<List<UserScore>>(_scoresJson);
             }
         }
 
         private string _scoresJson;
 
-        private List<UserScore> _scores;
+        [Ignored]
+        public List<UserScore> _scores { get; set; }
 
-        public List<UserScore> getUserScores() {
-            _scores = JsonConvert.DeserializeObject<List<UserScore>>(scoresJson);
+        public List<UserScore> getUserScores()
+        {
             return _scores;
         }
 
@@ -56,7 +55,7 @@ namespace ScoreboardTracker.Models
             {
                 _scores = new List<UserScore>();
             }
-            int indexToUpdate = _scores.FindIndex(s => s.userId == userScore.userId);
+            int indexToUpdate = _scores.FindIndex(s => s.user.userId == userScore.user.userId);
             if (indexToUpdate >= 0)
             {
                 _scores[indexToUpdate] = userScore;
@@ -70,13 +69,18 @@ namespace ScoreboardTracker.Models
 
         public void addUserScores(List<UserScore> list)
         {
-            list.ForEach(l => addUserScore(l));
+            if (_scores == null)
+            {
+                _scores = new List<UserScore>();
+            }
+            _scores.AddRange(list);
+            scoresJson = JsonConvert.SerializeObject(_scores);
         }
 
-        public void setUserScores(List<UserScore> list)
+        public void setUserScoresJson(List<UserScore> list)
         {
-            _scores = list;
-            scoresJson = JsonConvert.SerializeObject(_scores);
+            _scores = null;
+            addUserScores(list);
         }
     }
 }

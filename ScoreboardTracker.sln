@@ -7,7 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreboardTracker.Android",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreboardTracker.iOS", "ScoreboardTracker\ScoreboardTracker.iOS\ScoreboardTracker.iOS.csproj", "{0B60295F-1CCA-4026-8D94-24D1105B271C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScoreboardTracker", "ScoreboardTracker\ScoreboardTracker\ScoreboardTracker.csproj", "{09CD8224-2637-4959-8DEF-BDCB8C9AA7C2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ScoreboardTracker", "ScoreboardTracker\ScoreboardTracker\ScoreboardTracker.csproj", "{09CD8224-2637-4959-8DEF-BDCB8C9AA7C2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6D3F4803-87EF-4943-80AA-630B055F226F}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

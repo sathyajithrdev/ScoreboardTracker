@@ -12,5 +12,16 @@
             int.TryParse(value, out int intValue);
             return intValue;
         }
+
+        public static int? NullIfEmpty(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            int.TryParse(value, out int intValue);
+            return intValue;
+        }
     }
 }

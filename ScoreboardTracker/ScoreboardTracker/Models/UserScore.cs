@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Plugin.CloudFirestore.Attributes;
+using System.Collections.Generic;
 
 namespace ScoreboardTracker.Models
 {
     public class UserScore
     {
-        public string userId { get; set; }
+        [Ignored]
+        public User user { get; set; }
 
         public List<int?> scores { get; set; }
 

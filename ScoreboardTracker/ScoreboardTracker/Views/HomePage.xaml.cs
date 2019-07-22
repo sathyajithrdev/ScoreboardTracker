@@ -1,8 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using Xamarin.Forms;
-
-using ScoreboardTracker.Models;
 using ScoreboardTracker.ViewModels;
 using System.Diagnostics;
 using System.Threading.Tasks;

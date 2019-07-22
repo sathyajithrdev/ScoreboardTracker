@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:padding="6dp"
+    app:layout_constrainedWidth="true"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content">
 
@@ -12,8 +13,23 @@
         android:layout_height="wrap_content"
         android:maxLines="1"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
         android:inputType="number"
         android:digits="0123456789"
         android:imeOptions="actionDone"/>
+
+    <TextView
+        android:id="@+id/tvTotalScore"
+        android:layout_width="150dp"
+        android:layout_height="wrap_content"
+        android:maxWidth="150dp"
+        android:textSize="16dp"
+        android:textStyle="bold"
+        app:layout_constrainedWidth="true"
+        android:layout_marginStart="6dp"
+        android:textColor="@color/colorPrimaryDark"
+        app:layout_constraintStart_toEndOf="@+id/etScore"
+        app:layout_constraintTop_toTopOf="@+id/etScore"
+        app:layout_constraintBottom_toBottomOf="@+id/etScore"/>
+
 </android.support.constraint.ConstraintLayout>
