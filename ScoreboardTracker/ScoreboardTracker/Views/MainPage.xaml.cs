@@ -19,6 +19,7 @@ namespace ScoreboardTracker.Views
             {
 
                 InitializeComponent();
+                Xamarin.Forms.PlatformConfiguration.AndroidSpecific.TabbedPage.SetIsSwipePagingEnabled(this, false);
                 getGroups();
             }
             catch (Exception ex)

@@ -1,13 +1,14 @@
 ﻿using ScoreboardTracker.Models;
+using System;
 using System.Threading.Tasks;
 
 namespace ScoreboardTracker.Common.Interfaces
 {
     public interface IGameScoreHandler
     {
-        Task<bool> onStartGame();
+        Task<Tuple<bool, string>> onStartGame();
 
-        Task<bool> onEndGame(Game game);
+        Task<Tuple<bool, string>> onEndGame(Game game);
 
         void setListener(IGameScoreHandlerListener listener);
 

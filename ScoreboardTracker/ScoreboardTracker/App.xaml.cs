@@ -1,7 +1,5 @@
 ﻿using System;
 using Xamarin.Forms;
-using Xamarin.Forms.Xaml;
-using ScoreboardTracker.Services;
 using ScoreboardTracker.Views;
 using System.Diagnostics;
 
@@ -12,10 +10,11 @@ namespace ScoreboardTracker
 
         public App()
         {
-            try { 
-            InitializeComponent();
+            try
+            {
+                InitializeComponent();
 
-            MainPage = new MainPage();
+                MainPage = new MainPage();
             }
             catch (Exception ex)
             {

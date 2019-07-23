@@ -1,6 +1,4 @@
 ﻿using Plugin.CloudFirestore;
-using ScoreboardTracker.Common.Interfaces;
-using ScoreboardTracker.Models;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -9,6 +7,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
+
+using ScoreboardTracker.Common.Interfaces;
+using ScoreboardTracker.Models;
 
 namespace ScoreboardTracker.ViewModels
 {
@@ -33,7 +34,7 @@ namespace ScoreboardTracker.ViewModels
             this.page = page;
         }
 
-        private async void initGroupAndUsers()
+        public async Task initGroupAndUsers()
         {
             Users = new ObservableCollection<User>();
             UsersScore = new ObservableCollection<UserScore>();
@@ -65,16 +66,10 @@ namespace ScoreboardTracker.ViewModels
                 Users = new ObservableCollection<User>(allUsers.Where(u => group.userIds.Contains(u.userId)).ToList());
                 OnPropertyChanged(nameof(Users));
 
-                var currentGameQuery = await CrossCloudFirestore.Current
-                             .Instance
-                             .GetCollection($"groups/{groupDocId}/games")
-                             .WhereEqualsTo("isCompleted", false)
-                             .GetDocumentsAsync();
+                await populateCurrentGame();
 
-                currentGame = currentGameQuery.ToObjects<Game>().FirstOrDefault();
 
-                initScoreValues();
-                if (listener != null)
+                if (currentGame != null && listener != null)
                 {
                     listener.onUserScoresChanged();
                 }
@@ -95,18 +90,13 @@ namespace ScoreboardTracker.ViewModels
                 currentGame = new Game();
                 Users.ToList().ForEach(u =>
                 {
-                    currentGame._scores.Add(new UserScore()
+                    currentGame.scores.Add(new UserScore()
                     {
                         user = u,
                         scores = new List<int?>(7) { null, null, null, null, null, null, null }
                     });
                 });
             }
-            Users.ToList().ForEach(u =>
-            {
-                u.userScore = currentGame._scores.FirstOrDefault(c => c.user.userId == u.userId);
-                u.userScore.user = u;
-            });
         }
 
         public void setListener(IGameScoreHandlerListener listener)
@@ -114,62 +104,91 @@ namespace ScoreboardTracker.ViewModels
             this.listener = listener;
         }
 
-        public async Task<bool> onStartGame()
+        public async Task<Tuple<bool, string>> onStartGame()
         {
             try
             {
                 initScoreValues();
+
                 await CrossCloudFirestore.Current
                            .Instance
                            .GetCollection($"groups/{groupDocId}/games")
                            .AddDocumentAsync(currentGame);
 
-                var gameDocQuery = await CrossCloudFirestore.Current
-                             .Instance
-                             .GetCollection($"groups/{groupDocId}/games")
-                             .GetDocumentsAsync();
+                await populateCurrentGame();
 
-                var games = gameDocQuery?.ToObjects<Game>();
-                currentGame = games?.LastOrDefault();
                 if (listener != null)
                 {
                     listener.onUserScoresChanged();
                 }
-                return true;
+                return new Tuple<bool, string>(true, "");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
                 page.ShowToast(ex.Message);
+                return new Tuple<bool, string>(false, "");
             }
-            return false;
         }
 
-        public async Task<bool> onEndGame(Game game)
+        private async Task populateCurrentGame()
         {
-            if (game.getUserScores().All(u => u.scores.Count(s => s.HasValue) == 7))
+            var gameDocQuery = await CrossCloudFirestore.Current
+                                         .Instance
+                                         .GetCollection($"groups/{groupDocId}/games")
+                                         .WhereEqualsTo("isCompleted", false)
+                                         .GetDocumentsAsync();
+
+            var game = gameDocQuery?.ToObjects<Game>()?.FirstOrDefault();
+            if (game != null)
+            {
+                game.scores.ForEach(s =>
+                {
+                    s.user = Users.FirstOrDefault(u => u.userId == s.userId);
+                });
+                currentGame = game;
+            }
+        }
+
+        public async Task<Tuple<bool, string>> onEndGame(Game game)
+        {
+            if (game.scores.All(u => u.scores.Count(s => s.HasValue) == 7))
             {
                 currentGame.isCompleted = true;
 
-                await CrossCloudFirestore.Current
+                try
+                {
+                    var winner = currentGame.scores.Aggregate((curMin, s) => curMin == null || (s.scores.Sum() ?? 0) <
+                                                                             curMin.scores.Sum() ? s : curMin);
+
+                    var looser = currentGame.scores.Aggregate((curMax, s) => curMax == null || (s.scores.Sum() ?? 0) >
+                                                                             curMax.scores.Sum() ? s : curMax);
+
+                    currentGame.winnerId = winner.userId;
+                    currentGame.looserId = looser.userId;
+
+                    await CrossCloudFirestore.Current
                                 .Instance
                                 .GetCollection($"groups/{groupDocId}/games")
                                 .GetDocument(currentGame.gameId)
                                 .UpdateDataAsync(currentGame);
 
-                return true;
+                    currentGame = null;
+
+                    MessagingCenter.Send(this, "gameCompleted");
+
+                    return new Tuple<bool, string>(true, $"Match won by {winner?.user?.name}");
+                }
+                catch (Exception ex)
+                {
+                    await page.DisplayAlert(ex.Message);
+                    return new Tuple<bool, string>(false, ex.Message);
+                }
             }
             else
             {
-                await page.DisplayAlert("Please enter scores for all sets");
-                return false;
+                return new Tuple<bool, string>(false, "Please enter scores for all sets");
             }
-
-        }
-
-        public void onGameCompletedListener()
-        {
-            throw new NotImplementedException();
         }
 
         public async void onScoreChangedListener(Game game)
@@ -180,19 +199,19 @@ namespace ScoreboardTracker.ViewModels
             }
             try
             {
-                currentGame.setUserScoresJson(game._scores);
+                currentGame.scores = game.scores;
 
                 await CrossCloudFirestore.Current
                                     .Instance
                                     .GetCollection($"groups/{groupDocId}/games")
                                     .GetDocument(currentGame.gameId)
-                                    .UpdateDataAsync(currentGame);
+                                    .UpdateDataAsync((currentGame));
 
-                if (game.getUserScores().All(u => u.scores.Count(s => s.HasValue) == 6))
+                if (game.scores.All(u => u.scores.Count(s => s.HasValue) == 6))
                 {
                     if (listener != null)
                     {
-                        List<Tuple<UserScore, int>> userTotalScores = game.getUserScores().Select(u => new Tuple<UserScore, int>(u, u.scores.Sum() ?? 0)).ToList();
+                        List<Tuple<UserScore, int>> userTotalScores = game.scores.Select(u => new Tuple<UserScore, int>(u, u.scores.Sum() ?? 0)).ToList();
 
                         int minScore = userTotalScores.Min(u => u.Item2);
                         Tuple<UserScore, int> minScoredUser = userTotalScores.FirstOrDefault(u => u.Item2 == minScore);

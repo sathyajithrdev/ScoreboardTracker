@@ -11,76 +11,90 @@ namespace ScoreboardTracker.Models
         public bool isCompleted { get; set; }
         public string scoresJson
         {
-            get => _scoresJson;
+            get => JsonConvert.SerializeObject(scores);
             set
             {
-                _scoresJson = value;
-                _scores = JsonConvert.DeserializeObject<List<UserScore>>(_scoresJson);
+                scores = JsonConvert.DeserializeObject<List<UserScore>>(value);
             }
         }
 
-        private string _scoresJson;
+        public string winnerId { get; set; }
+        public string looserId { get; set; }
 
-        [Ignored]
-        public List<UserScore> _scores { get; set; }
+        [JsonIgnore, Ignored]
+        public List<UserScore> scores { get; set; }
 
-        public List<UserScore> getUserScores()
+        //private string _scoresJson;
+
+        public Game()
         {
-            return _scores;
+            scores = new List<UserScore>();
         }
 
-        public void addUserScore(UserScore userScore)
-        {
-            if (_scores == null)
-            {
-                _scores = new List<UserScore>();
-            }
+        //public Game(FCMGameCollection game)
+        //{
+        //    this.isCompleted = game.isCompleted;
+        //    this.gameId = game.gameId;
+        //    this.scores = JsonConvert.DeserializeObject<List<UserScore>>(game.scoresJson);
+        //}
 
-            _scores.Add(userScore);
-            scoresJson = JsonConvert.SerializeObject(_scores);
-        }
+        //public List<UserScore> getUserScores()
+        //{
+        //    return scores;
+        //}
 
-        public void removeUserScore(UserScore userScore)
-        {
-            if (_scores == null)
-            {
-                return;
-            }
-            _scores.Remove(userScore);
-        }
+        //public void addUserScore(UserScore userScore)
+        //{
+        //    if (scores == null)
+        //    {
+        //        scores = new List<UserScore>();
+        //    }
 
-        public void updateOrInsertUserScore(UserScore userScore)
-        {
-            if (_scores == null)
-            {
-                _scores = new List<UserScore>();
-            }
-            int indexToUpdate = _scores.FindIndex(s => s.user.userId == userScore.user.userId);
-            if (indexToUpdate >= 0)
-            {
-                _scores[indexToUpdate] = userScore;
-            }
-            else
-            {
-                _scores.Add(userScore);
-            }
-            scoresJson = JsonConvert.SerializeObject(_scores);
-        }
+        //    scores.Add(userScore);
+        //    //scoresJson = JsonConvert.SerializeObject(_scores);
+        //}
 
-        public void addUserScores(List<UserScore> list)
-        {
-            if (_scores == null)
-            {
-                _scores = new List<UserScore>();
-            }
-            _scores.AddRange(list);
-            scoresJson = JsonConvert.SerializeObject(_scores);
-        }
+        //public void removeUserScore(UserScore userScore)
+        //{
+        //    if (scores == null)
+        //    {
+        //        return;
+        //    }
+        //    scores.Remove(userScore);
+        //}
 
-        public void setUserScoresJson(List<UserScore> list)
-        {
-            _scores = null;
-            addUserScores(list);
-        }
+        //public void updateOrInsertUserScore(UserScore userScore)
+        //{
+        //    if (scores == null)
+        //    {
+        //        scores = new List<UserScore>();
+        //    }
+        //    int indexToUpdate = scores.FindIndex(s => s.user.userId == userScore.user.userId);
+        //    if (indexToUpdate >= 0)
+        //    {
+        //        scores[indexToUpdate] = userScore;
+        //    }
+        //    else
+        //    {
+        //        scores.Add(userScore);
+        //    }
+        //    //scoresJson = JsonConvert.SerializeObject(_scores);
+        //}
+
+        //public void addUserScores(List<UserScore> list)
+        //{
+        //    if (scores == null)
+        //    {
+        //        scores = new List<UserScore>();
+        //    }
+        //    scores.AddRange(list);
+        //    //scoresJson = JsonConvert.SerializeObject(_scores);
+        //}
+
+        //public void setUserScoresJson(List<UserScore> list)
+        //{
+        //    scores = null;
+        //    addUserScores(list);
+        //}
     }
 }
