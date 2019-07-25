@@ -1,9 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using Xamarin.Forms;
-using ScoreboardTracker.ViewModels;
 using System.Diagnostics;
-using System.Threading.Tasks;
 
 namespace ScoreboardTracker.Views
 {
@@ -12,7 +10,6 @@ namespace ScoreboardTracker.Views
     [DesignTimeVisible(false)]
     public partial class HomePage : ContentPage
     {
-        MainViewModel viewModel;
 
         public string Test => "From page object";
 
@@ -20,25 +17,12 @@ namespace ScoreboardTracker.Views
         {
             try
             {
-                //viewModel = new MainViewModel();
                 InitializeComponent();
-                //BindingContext = viewModel;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
             }
-
-        }
-
-        protected override void OnAppearing()
-        {
-            base.OnAppearing();
-            Task.Run(async () =>
-            {
-                await Task.Delay(5000);
-                viewModel.LoadUsersCommand.Execute(null);
-            });
         }
     }
 }

@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Android.Support.V7.Widget;
 using ScoreboardTracker.Models;
 using View = Android.Views.View;
-using System.Collections.ObjectModel;
 using ScoreboardTracker.Droid.Pages;
 using ScoreboardTracker.Views;
 using Com.Bumptech.Glide;
@@ -20,28 +19,64 @@ using ScoreboardTracker.Common;
 using ScoreboardTracker.Common.Interfaces;
 using Plugin.Toast;
 using System.Collections.Generic;
+using Android.Support.Design.Widget;
+using Autofac;
+using Com.Airbnb.Lottie;
+using Xamarin.Essentials;
 using static Android.Support.V7.Widget.GridLayoutManager;
+using Group = Android.Support.Constraints.Group;
 
 [assembly: ExportRenderer(typeof(HomePage), typeof(HomePageRenderer))]
 namespace ScoreboardTracker.Droid.Pages
 {
-    public partial class HomePageRenderer : PageRenderer, IGameScoreHandlerListener, IPage
+    public class HomePageRenderer : PageRenderer, IGameScoreHandlerListener, IPage
     {
-        Android.Widget.Button buttonStartGame;
-        Android.Widget.Button buttonEndGame;
-        TextView textViewLastSetReached;
-        View view;
-        MainViewModel viewModel;
-        Activity activity;
-        RecyclerView rvUsers;
-        public Context mContext;
-        ProgressDialog mProgressDiag;
+        private Android.Widget.Button _buttonStartGame;
+        private Android.Widget.Button _buttonEndGame;
+        private Android.Widget.Button _buttonRetry;
+        private TextView _textViewLastSetReached;
+        private TextView _textViewProgress;
+        private TextView _textViewError;
+        private View _view;
+        private Group _groupControls;
+        private Group _groupProgressControls;
+        private Group _groupErrorControls;
+        private LottieAnimationView _progressView;
+
+        private readonly MainViewModel _viewModel;
+        private Activity _activity;
+        private RecyclerView _rvUsers;
+        private bool _isShowingOfflineSnackbar;
+        //private ProgressDialog _mProgressDialog;
 
         public HomePageRenderer(Context context) : base(context)
         {
-            viewModel = new MainViewModel(this);
-            mContext = context;
-            viewModel.setListener(this);
+            _viewModel = new MainViewModel(this, App.DiResolver.Resolve<IScoreboardRepository>());
+            _viewModel.setListener(this);
+            initConnectivityListener();
+        }
+
+        private void initConnectivityListener()
+        {
+            Connectivity.ConnectivityChanged += (sender, args) =>
+            {
+                if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+                {
+                    _isShowingOfflineSnackbar = true;
+                    showSnackbar("You are offline");
+                }
+                else if (_isShowingOfflineSnackbar)
+                {
+                    _isShowingOfflineSnackbar = false;
+                    showSnackbar("You are back online", Snackbar.LengthShort);
+                }
+
+            };
+        }
+
+        private void showSnackbar(string message, int duration = Snackbar.LengthIndefinite)
+        {
+            Snackbar.Make(this,message , duration).Show();
         }
 
         protected override void OnAttachedToWindow()
@@ -61,7 +96,7 @@ namespace ScoreboardTracker.Droid.Pages
             {
                 SetupUserInterface();
                 initControlsAndEventHandlers();
-                AddView(view);
+                AddView(_view);
             }
             catch (Exception ex)
             {
@@ -75,41 +110,64 @@ namespace ScoreboardTracker.Droid.Pages
             Task.Run(async () =>
             {
                 showProgressDialog("Loading details");
-                await viewModel.initGroupAndUsers();
+                await _viewModel.initGroupAndUsers();
                 dismissProgressDialog();
             });
         }
 
         void SetupUserInterface()
         {
-            activity = this.Context as Activity;
-            view = activity.LayoutInflater.Inflate(Resource.Layout.HomePage, this, false);
+            _activity = Context as Activity;
+            _view = _activity?.LayoutInflater.Inflate(Resource.Layout.HomePage, this, false);
         }
 
         private void initRecyclerView()
         {
-            rvUsers = view.FindViewById<RecyclerView>(Resource.Id.rvUsers);
-            var layoutManager = new LinearLayoutManager(activity);
-            rvUsers.SetLayoutManager(layoutManager);
-            UserScoreAdapter mAdapter = new UserScoreAdapter(viewModel.currentGame, this);
-            rvUsers.SetAdapter(mAdapter);
+            _rvUsers = _view.FindViewById<RecyclerView>(Resource.Id.rvUsers);
+            var layoutManager = new LinearLayoutManager(_activity);
+            _rvUsers.SetLayoutManager(layoutManager);
+            UserScoreAdapter mAdapter = new UserScoreAdapter(_viewModel.CurrentGame, this);
+            _rvUsers.SetAdapter(mAdapter);
         }
 
         void initControlsAndEventHandlers()
         {
-            textViewLastSetReached = view.FindViewById<global::Android.Widget.TextView>(Resource.Id.tvLastGameStat);
+            initTextViews();
+            initGroups();
             initButtonStart();
             initButtonStop();
+            initButtonRetry();
+        }
+
+        private void initTextViews()
+        {
+            _textViewLastSetReached = _view.FindViewById<TextView>(Resource.Id.tvLastGameStat);
+            _textViewProgress = _view.FindViewById<TextView>(Resource.Id.textViewInProgress);
+            _textViewError = _view.FindViewById<TextView>(Resource.Id.textViewError);
+        }
+
+        private void initGroups()
+        {
+            _groupControls = _view.FindViewById<Group>(Resource.Id.controls);
+            _groupProgressControls = _view.FindViewById<Group>(Resource.Id.progressControls);
+            _groupErrorControls = _view.FindViewById<Group>(Resource.Id.errorControls);
+            _progressView = _view.FindViewById<LottieAnimationView>(Resource.Id.progressBar);
         }
 
         private void initButtonStop()
         {
-            buttonEndGame = view.FindViewById<global::Android.Widget.Button>(Resource.Id.buttonEndGame);
-            buttonEndGame.Click += (sender, e) =>
+            _buttonEndGame = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonEndGame);
+            _buttonEndGame.Click += (sender, e) =>
             {
+                if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+                {
+                    showError("No internet", initButtonStop);
+                    return;
+                }
+
                 Task.Run(async () =>
                 {
-                    var result = await viewModel.onEndGame(viewModel.currentGame);
+                    var result = await _viewModel.onEndGame(_viewModel.CurrentGame);
 
                     showProgressDialog("Saving data");
 
@@ -119,12 +177,12 @@ namespace ScoreboardTracker.Droid.Pages
                         {
                             ShowToast(result.Item2);
                         }
-                        activity.RunOnUiThread(() =>
+                        _activity.RunOnUiThread(() =>
                         {
-                            buttonStartGame.Visibility = ViewStates.Visible;
-                            buttonEndGame.Visibility = ViewStates.Gone;
+                            _buttonStartGame.Visibility = ViewStates.Visible;
+                            _buttonEndGame.Visibility = ViewStates.Gone;
                         });
-                        await viewModel.onStartGame();
+                        await _viewModel.onStartGame();
                     }
                     else
                     {
@@ -138,17 +196,27 @@ namespace ScoreboardTracker.Droid.Pages
             };
         }
 
+        private void initButtonRetry()
+        {
+            _buttonRetry = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonRetry);
+        }
+
         private void initButtonStart()
         {
-            buttonStartGame = view.FindViewById<global::Android.Widget.Button>(Resource.Id.buttonStartGame);
-            buttonStartGame.Click += (sender, e) =>
+            _buttonStartGame = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonStartGame);
+            _buttonStartGame.Click += (sender, e) =>
             {
+                if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+                {
+                    showError("No internet", initButtonStart);
+                    return;
+                }
                 Task.Run(async () =>
                 {
-                    var result = await viewModel.onStartGame();
+                    var result = await _viewModel.onStartGame();
                     if (result.Item1)
                     {
-                        activity.RunOnUiThread(() =>
+                        _activity.RunOnUiThread(() =>
                         {
                             setStartAndStopButtonVisibility(result.Item1);
                         });
@@ -157,10 +225,19 @@ namespace ScoreboardTracker.Droid.Pages
             };
         }
 
+        private void showError(string message, Action action)
+        {
+            _groupErrorControls.Visibility = ViewStates.Visible;
+            _groupControls.Visibility = ViewStates.Gone;
+            _groupProgressControls.Visibility = ViewStates.Gone;
+            _textViewError.Text = message;
+            _buttonRetry.Click += (sender, args) => { action.Invoke(); };
+        }
+
         private void setStartAndStopButtonVisibility(bool hasInProgressGame)
         {
-            buttonStartGame.Visibility = hasInProgressGame ? ViewStates.Gone : ViewStates.Visible;
-            buttonEndGame.Visibility = hasInProgressGame ? ViewStates.Visible : ViewStates.Gone;
+            _buttonStartGame.Visibility = hasInProgressGame ? ViewStates.Gone : ViewStates.Visible;
+            _buttonEndGame.Visibility = hasInProgressGame ? ViewStates.Visible : ViewStates.Gone;
         }
 
         protected override void OnLayout(bool changed, int l, int t, int r, int b)
@@ -170,24 +247,24 @@ namespace ScoreboardTracker.Droid.Pages
             var msw = MeasureSpec.MakeMeasureSpec(r - l, MeasureSpecMode.Exactly);
             var msh = MeasureSpec.MakeMeasureSpec(b - t, MeasureSpecMode.Exactly);
 
-            view.Measure(msw, msh);
-            view.Layout(0, 0, r - l, b - t);
+            _view.Measure(msw, msh);
+            _view.Layout(0, 0, r - l, b - t);
         }
 
         public void OnScoreChanged()
         {
-            viewModel.onScoreChangedListener(viewModel.currentGame);
+            _viewModel.onScoreChangedListener(_viewModel.CurrentGame);
         }
 
         public void onUserScoresChanged()
         {
-            if (viewModel.currentGame == null)
+            if (_viewModel.CurrentGame == null)
             {
                 return;
             }
-            activity.RunOnUiThread(() =>
+            _activity.RunOnUiThread(() =>
             {
-                setStartAndStopButtonVisibility(!viewModel.currentGame.isCompleted);
+                setStartAndStopButtonVisibility(!_viewModel.CurrentGame.isCompleted);
                 initRecyclerView();
             });
         }
@@ -197,18 +274,18 @@ namespace ScoreboardTracker.Droid.Pages
         {
             if (message != null)
             {
-                activity.RunOnUiThread(() =>
+                _activity.RunOnUiThread(() =>
                 {
-                    textViewLastSetReached.Visibility = ViewStates.Visible;
-                    textViewLastSetReached.Text = message;
+                    _textViewLastSetReached.Visibility = ViewStates.Visible;
+                    _textViewLastSetReached.Text = message;
                 });
 
             }
-            else if (textViewLastSetReached.Visibility == ViewStates.Visible)
+            else if (_textViewLastSetReached.Visibility == ViewStates.Visible)
             {
-                activity.RunOnUiThread(() =>
+                _activity.RunOnUiThread(() =>
                 {
-                    textViewLastSetReached.Visibility = ViewStates.Gone;
+                    _textViewLastSetReached.Visibility = ViewStates.Gone;
                 });
             }
         }
@@ -217,9 +294,9 @@ namespace ScoreboardTracker.Droid.Pages
         {
             return Task.Run(() =>
             {
-                activity.RunOnUiThread(() =>
+                _activity.RunOnUiThread(() =>
                 {
-                    AlertDialog.Builder dialog = new AlertDialog.Builder(mContext);
+                    AlertDialog.Builder dialog = new AlertDialog.Builder(Context);
                     AlertDialog alert = dialog.Create();
                     alert.SetTitle("Scoreboard Tracker");
                     alert.SetMessage(message);
@@ -234,7 +311,7 @@ namespace ScoreboardTracker.Droid.Pages
 
         public void ShowToast(string message)
         {
-            activity.RunOnUiThread(() =>
+            _activity.RunOnUiThread(() =>
             {
                 CrossToastPopUp.Current.ShowToastMessage(message, Plugin.Toast.Abstractions.ToastLength.Long);
             });
@@ -242,22 +319,29 @@ namespace ScoreboardTracker.Droid.Pages
 
         private void showProgressDialog(string message)
         {
-            activity.RunOnUiThread(() =>
+            _activity.RunOnUiThread(() =>
             {
-                if (mProgressDiag != null)
-                {
-                    mProgressDiag = new ProgressDialog(activity);
-                    mProgressDiag.SetMessage(message);
-                    mProgressDiag.Show();
-                }
+                //if (_mProgressDialog == null)
+                //{
+                //    _mProgressDialog = new ProgressDialog(_activity);
+                //}
+                //_mProgressDialog.SetMessage(message);
+                //_mProgressDialog.Show();
+                _textViewProgress.Text = message;
+                _groupControls.Visibility = ViewStates.Invisible;
+                _groupProgressControls.Visibility = ViewStates.Visible;
+                _progressView.PlayAnimation();
             });
         }
 
         private void dismissProgressDialog()
         {
-            activity.RunOnUiThread(() =>
+            _activity.RunOnUiThread(() =>
             {
-                mProgressDiag?.Dismiss();
+                //_mProgressDialog?.Dismiss();
+                _groupControls.Visibility = ViewStates.Visible;
+                _groupProgressControls.Visibility = ViewStates.Gone;
+                _progressView.CancelAnimation();
             });
         }
     }
@@ -266,14 +350,13 @@ namespace ScoreboardTracker.Droid.Pages
 
     public class UserScoreAdapter : RecyclerView.Adapter
     {
-        private event EventHandler<int> ItemClick;
-        private Game mGame;
-        private HomePageRenderer mContext;
+        private readonly Game _mGame;
+        private readonly HomePageRenderer _mContext;
 
         public UserScoreAdapter(Game game, HomePageRenderer context)
         {
-            mGame = game;
-            mContext = context;
+            _mGame = game;
+            _mContext = context;
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup parent, int viewType)
@@ -281,66 +364,57 @@ namespace ScoreboardTracker.Droid.Pages
             View itemView = LayoutInflater.From(parent.Context).
                         Inflate(Resource.Layout.item_user, parent, false);
 
-            UserScoreViewHolder vh = new UserScoreViewHolder(itemView, OnClick);
+            UserScoreViewHolder vh = new UserScoreViewHolder(itemView);
             return vh;
         }
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position)
         {
             UserScoreViewHolder vh = holder as UserScoreViewHolder;
-            UserScore userScore = mGame.scores[position];
+            if (vh == null) return;
+            UserScore userScore = _mGame.scores[position];
             vh.TvUserName.Text = userScore.user.name;
             Glide
-            .With(mContext)
-            .Load(userScore.user.profileUrl)
-            .Apply(RequestOptions.CenterCropTransform()).Into(vh.IvUserProfile);
+                .With(_mContext)
+                .Load(userScore.user.profileUrl)
+                .Apply(RequestOptions.CenterCropTransform()).Into(vh.IvUserProfile);
 
-            GridLayoutManager layoutManager = new GridLayoutManager(mContext.Context, 3);
+            GridLayoutManager layoutManager = new GridLayoutManager(_mContext.Context, 3);
             layoutManager.SetSpanSizeLookup(new ScoreSpanSizeLookup(userScore.scores.Count));
             vh.RvUserScore.SetLayoutManager(layoutManager);
-            vh.RvUserScore.SetAdapter(new ScoreAdapter(mContext, userScore));
+            vh.RvUserScore.SetAdapter(new ScoreAdapter(_mContext, userScore));
         }
 
-        public override int ItemCount
-        {
-            get { return mGame.scores.Count; }
-        }
-        void OnClick(int position)
-        {
-            ItemClick?.Invoke(this, position);
-        }
+        public override int ItemCount => _mGame.scores.Count;
     }
 
     public class ScoreSpanSizeLookup : SpanSizeLookup
     {
-        private int count;
+        private readonly int _count;
 
         public ScoreSpanSizeLookup(int count)
         {
-            this.count = count;
+            _count = count;
         }
 
         public override int GetSpanSize(int position)
         {
-            if (position == count - 1)
-                return 3;
-            return 1;
+            return position == _count - 1 ? 3 : 1;
         }
     }
 
 
     public class UserScoreViewHolder : RecyclerView.ViewHolder
     {
-        public ImageView IvUserProfile { get; private set; }
-        public TextView TvUserName { get; private set; }
-        public RecyclerView RvUserScore { get; private set; }
+        public ImageView IvUserProfile { get; }
+        public TextView TvUserName { get; }
+        public RecyclerView RvUserScore { get; }
 
-        public UserScoreViewHolder(View itemView, Action<int> listener) : base(itemView)
+        public UserScoreViewHolder(View itemView) : base(itemView)
         {
             TvUserName = itemView.FindViewById<TextView>(Resource.Id.tvUserName);
             IvUserProfile = itemView.FindViewById<ImageView>(Resource.Id.ivUser);
             RvUserScore = itemView.FindViewById<RecyclerView>(Resource.Id.rvScore);
-            itemView.Click += (sender, e) => listener(base.LayoutPosition);
         }
     }
 
@@ -352,63 +426,53 @@ namespace ScoreboardTracker.Droid.Pages
 
         private const int TotalValueChanged = 1;
 
-        private event EventHandler<int> ItemClick;
-        private UserScore mUserScore;
-        private readonly HomePageRenderer mContext;
-        private int isInitialLoad;
+        private readonly UserScore _mUserScore;
+        private readonly HomePageRenderer _mContext;
+        private int _isInitialLoad;
 
         public ScoreAdapter(HomePageRenderer context, UserScore userScore)
         {
-            mUserScore = userScore;
-            mContext = context;
+            _mUserScore = userScore;
+            _mContext = context;
         }
 
         public override int GetItemViewType(int position)
         {
-            return mUserScore.scores.Count == position + 1 ? EditTextAndTextViewType : EditTextOnlyType;
+            return _mUserScore.scores.Count == position + 1 ? EditTextAndTextViewType : EditTextOnlyType;
         }
 
 
         public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup viewGroup, int type)
         {
-            View itemView;
-            if (type == EditTextAndTextViewType)
-            {
-                itemView = LayoutInflater.From(viewGroup.Context).
-                      Inflate(Resource.Layout.item_score_with_text, viewGroup, false);
-            }
-            else
-            {
-                itemView = LayoutInflater.From(viewGroup.Context).
-                     Inflate(Resource.Layout.item_score, viewGroup, false);
-
-            }
+            var itemView = LayoutInflater.From(viewGroup.Context).Inflate(type == EditTextAndTextViewType ?
+                Resource.Layout.item_score_with_text : Resource.Layout.item_score, viewGroup, false);
             return new ScoreViewHolder(itemView, type);
         }
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position)
         {
-            if (isInitialLoad < mUserScore.scores.Count)
+            if (_isInitialLoad < _mUserScore.scores.Count)
             {
-                isInitialLoad++;
+                _isInitialLoad++;
             }
             ScoreViewHolder vh = holder as ScoreViewHolder;
-            vh.EtScore.Text = mUserScore.scores[position]?.ToString();
+            if (vh == null) return;
+            vh.EtScore.Text = _mUserScore.scores[position]?.ToString();
             SetTotalScoreTextBox(vh);
             vh.EtScore.AfterTextChanged += (sender, args) =>
             {
-                mUserScore.scores[position] = CommonUtils.NullIfEmpty(vh.EtScore.Text);
+                _mUserScore.scores[position] = CommonUtils.NullIfEmpty(vh.EtScore.Text);
 
-                if (position == mUserScore.scores.Count - 1)
+                if (position == _mUserScore.scores.Count - 1)
                 {
-                    vh.TvTotalScore.Text = mUserScore.scores.Sum(s => s).ToString();
+                    vh.TvTotalScore.Text = _mUserScore.scores.Sum(s => s).ToString();
                 }
                 else
                 {
-                    if (isInitialLoad == mUserScore.scores.Count)
+                    if (_isInitialLoad == _mUserScore.scores.Count)
                     {
-                        NotifyItemChanged(mUserScore.scores.Count - 1, TotalValueChanged);
-                        mContext.OnScoreChanged();
+                        NotifyItemChanged(_mUserScore.scores.Count - 1, TotalValueChanged);
+                        _mContext.OnScoreChanged();
                     }
                 }
             };
@@ -430,26 +494,19 @@ namespace ScoreboardTracker.Droid.Pages
         {
             if (vh.TvTotalScore != null)
             {
-                vh.TvTotalScore.Text = mUserScore.scores.Sum(s => s).ToString();
+                vh.TvTotalScore.Text = _mUserScore.scores.Sum(s => s).ToString();
             }
         }
 
-        public override int ItemCount
-        {
-            get { return mUserScore?.scores?.Count ?? 0; }
-        }
+        public override int ItemCount => _mUserScore?.scores?.Count ?? 0;
 
-        void OnClick(int position)
-        {
-            ItemClick?.Invoke(this, position);
-        }
     }
 
 
     public class ScoreViewHolder : RecyclerView.ViewHolder
     {
-        public EditText EtScore { get; private set; }
-        public TextView TvTotalScore { get; private set; }
+        public EditText EtScore { get; }
+        public TextView TvTotalScore { get; }
 
         public ScoreViewHolder(View itemView, int type) : base(itemView)
         {

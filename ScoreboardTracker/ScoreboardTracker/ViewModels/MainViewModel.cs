@@ -1,7 +1,5 @@
-﻿using Plugin.CloudFirestore;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,29 +13,27 @@ namespace ScoreboardTracker.ViewModels
 {
     public class MainViewModel : BaseViewModel, IGameScoreHandler
     {
-        private ObservableCollection<User> Users { get; set; }
-        private ObservableCollection<UserScore> UsersScore { get; set; }
+        private List<User> Users { get; set; }
 
-        public ICommand LoadUsersCommand => new Command(() => initGroupAndUsers());
+        public ICommand LoadUsersCommand => new Command(async () => await initGroupAndUsers());
 
         private IGameScoreHandlerListener listener { get; set; }
 
-        private string groupDocId;
+        private string _groupDocId;
+        private readonly IPage _page;
+        private readonly IScoreboardRepository _scoreboardRepository;
 
-        public Game currentGame;
+        public Game CurrentGame;
 
-        private IPage page;
-
-
-        public MainViewModel(IPage page)
+        public MainViewModel(IPage page, IScoreboardRepository scoreboardRepository)
         {
-            this.page = page;
+            _page = page;
+            _scoreboardRepository = scoreboardRepository;
         }
 
         public async Task initGroupAndUsers()
         {
-            Users = new ObservableCollection<User>();
-            UsersScore = new ObservableCollection<UserScore>();
+            Users = new List<User>();
 
             try
             {
@@ -46,51 +42,46 @@ namespace ScoreboardTracker.ViewModels
                     return;
                 }
                 IsBusy = true;
-                var groupQuery = await CrossCloudFirestore.Current
-                        .Instance
-                        .GetCollection("groups")
-                        .LimitTo(1)
-                        .GetDocumentsAsync();
 
-                groupDocId = groupQuery.Documents.FirstOrDefault().Id;
+                var group = await _scoreboardRepository.GetGroup();
 
-                Group group = groupQuery.ToObjects<Group>().FirstOrDefault();
-
-                var usersQuery = await CrossCloudFirestore.Current
-                        .Instance
-                        .GetCollection("users")
-                        .GetDocumentsAsync();
-
-                List<User> allUsers = usersQuery.ToObjects<User>().ToList();
-
-                Users = new ObservableCollection<User>(allUsers.Where(u => group.userIds.Contains(u.userId)).ToList());
-                OnPropertyChanged(nameof(Users));
-
-                await populateCurrentGame();
-
-
-                if (currentGame != null && listener != null)
+                if (group == null)
                 {
-                    listener.onUserScoresChanged();
+                    IsBusy = false;
+                    return;
+                }
+
+                _groupDocId = group.groupId;
+
+                var allUsers = await _scoreboardRepository.GetAllUsers();
+
+                Users = allUsers.Where(u => group.userIds.Contains(u.userId)).ToList();
+
+                await populateOnGoingGame();
+
+
+                if (CurrentGame != null)
+                {
+                    listener?.onUserScoresChanged();
                 }
                 IsBusy = false;
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                page.ShowToast(ex.Message);
+                _page.ShowToast(ex.Message);
                 IsBusy = false;
             }
         }
 
         private void initScoreValues()
         {
-            if (currentGame == null)
+            if (CurrentGame == null)
             {
-                currentGame = new Game();
+                CurrentGame = new Game();
                 Users.ToList().ForEach(u =>
                 {
-                    currentGame.scores.Add(new UserScore()
+                    CurrentGame.scores.Add(new UserScore()
                     {
                         user = u,
                         scores = new List<int?>(7) { null, null, null, null, null, null, null }
@@ -99,9 +90,9 @@ namespace ScoreboardTracker.ViewModels
             }
         }
 
-        public void setListener(IGameScoreHandlerListener listener)
+        public void setListener(IGameScoreHandlerListener gameScoreHandlerListener)
         {
-            this.listener = listener;
+            listener = gameScoreHandlerListener;
         }
 
         public async Task<Tuple<bool, string>> onStartGame()
@@ -110,43 +101,31 @@ namespace ScoreboardTracker.ViewModels
             {
                 initScoreValues();
 
-                await CrossCloudFirestore.Current
-                           .Instance
-                           .GetCollection($"groups/{groupDocId}/games")
-                           .AddDocumentAsync(currentGame);
+                await _scoreboardRepository.AddGame(_groupDocId, CurrentGame);
 
-                await populateCurrentGame();
-
-                if (listener != null)
-                {
-                    listener.onUserScoresChanged();
-                }
+                await populateOnGoingGame();
+                listener?.onUserScoresChanged();
                 return new Tuple<bool, string>(true, "");
             }
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                page.ShowToast(ex.Message);
+                _page.ShowToast(ex.Message);
                 return new Tuple<bool, string>(false, "");
             }
         }
 
-        private async Task populateCurrentGame()
+        private async Task populateOnGoingGame()
         {
-            var gameDocQuery = await CrossCloudFirestore.Current
-                                         .Instance
-                                         .GetCollection($"groups/{groupDocId}/games")
-                                         .WhereEqualsTo("isCompleted", false)
-                                         .GetDocumentsAsync();
+            var onGoingGame = await _scoreboardRepository.GetOnGoingGame(_groupDocId);
 
-            var game = gameDocQuery?.ToObjects<Game>()?.FirstOrDefault();
-            if (game != null)
+            if (onGoingGame != null)
             {
-                game.scores.ForEach(s =>
+                onGoingGame.scores.ForEach(s =>
                 {
                     s.user = Users.FirstOrDefault(u => u.userId == s.userId);
                 });
-                currentGame = game;
+                CurrentGame = onGoingGame;
             }
         }
 
@@ -154,34 +133,30 @@ namespace ScoreboardTracker.ViewModels
         {
             if (game.scores.All(u => u.scores.Count(s => s.HasValue) == 7))
             {
-                currentGame.isCompleted = true;
+                CurrentGame.isCompleted = true;
 
                 try
                 {
-                    var winner = currentGame.scores.Aggregate((curMin, s) => curMin == null || (s.scores.Sum() ?? 0) <
+                    var winner = CurrentGame.scores.Aggregate((curMin, s) => curMin == null || (s.scores.Sum() ?? 0) <
                                                                              curMin.scores.Sum() ? s : curMin);
 
-                    var looser = currentGame.scores.Aggregate((curMax, s) => curMax == null || (s.scores.Sum() ?? 0) >
+                    var looser = CurrentGame.scores.Aggregate((curMax, s) => curMax == null || (s.scores.Sum() ?? 0) >
                                                                              curMax.scores.Sum() ? s : curMax);
 
-                    currentGame.winnerId = winner.userId;
-                    currentGame.looserId = looser.userId;
+                    CurrentGame.winnerId = winner.userId;
+                    CurrentGame.looserId = looser.userId;
 
-                    await CrossCloudFirestore.Current
-                                .Instance
-                                .GetCollection($"groups/{groupDocId}/games")
-                                .GetDocument(currentGame.gameId)
-                                .UpdateDataAsync(currentGame);
+                    await _scoreboardRepository.UpdateGame(_groupDocId, CurrentGame);
 
-                    currentGame = null;
+                    CurrentGame = null;
 
                     MessagingCenter.Send(this, "gameCompleted");
 
-                    return new Tuple<bool, string>(true, $"Match won by {winner?.user?.name}");
+                    return new Tuple<bool, string>(true, $"Match won by {winner.user?.name}");
                 }
                 catch (Exception ex)
                 {
-                    await page.DisplayAlert(ex.Message);
+                    await _page.DisplayAlert(ex.Message);
                     return new Tuple<bool, string>(false, ex.Message);
                 }
             }
@@ -193,42 +168,37 @@ namespace ScoreboardTracker.ViewModels
 
         public async void onScoreChangedListener(Game game)
         {
-            if (currentGame == null)
+            if (CurrentGame == null)
             {
                 return;
             }
             try
             {
-                currentGame.scores = game.scores;
+                CurrentGame.scores = game.scores;
 
-                await CrossCloudFirestore.Current
-                                    .Instance
-                                    .GetCollection($"groups/{groupDocId}/games")
-                                    .GetDocument(currentGame.gameId)
-                                    .UpdateDataAsync((currentGame));
+                await _scoreboardRepository.UpdateGame(_groupDocId, CurrentGame);
 
+                List<Tuple<UserScore, int>> userTotalScores = game.scores.Select(u => new Tuple<UserScore, int>(u, u.scores.Sum() ?? 0)).ToList();
                 if (game.scores.All(u => u.scores.Count(s => s.HasValue) == 6))
                 {
-                    if (listener != null)
+                    if (listener == null) return;
+
+                    var minScore = userTotalScores.Min(u => u.Item2);
+                    var minScoredUser = userTotalScores.FirstOrDefault(u => u.Item2 == minScore);
+                    userTotalScores.Remove(minScoredUser);
+
+                    var secondMinScore = userTotalScores.Min(u => u.Item2);
+                    var secondMinScoredUser = userTotalScores.FirstOrDefault(u => u.Item2 == secondMinScore);
+
+                    if (minScoredUser == null || secondMinScoredUser == null) return;
+
+                    var scoreToStand = (secondMinScoredUser.Item2 - 1 - minScoredUser.Item2) / 2;
+                    if (scoreToStand < 0)
                     {
-                        List<Tuple<UserScore, int>> userTotalScores = game.scores.Select(u => new Tuple<UserScore, int>(u, u.scores.Sum() ?? 0)).ToList();
-
-                        int minScore = userTotalScores.Min(u => u.Item2);
-                        Tuple<UserScore, int> minScoredUser = userTotalScores.FirstOrDefault(u => u.Item2 == minScore);
-                        userTotalScores.Remove(minScoredUser);
-
-                        int secondMinScore = userTotalScores.Min(u => u.Item2);
-                        Tuple<UserScore, int> secondMinScoredUser = userTotalScores.FirstOrDefault(u => u.Item2 == secondMinScore);
-
-                        int scoreToStand = (secondMinScoredUser.Item2 - 1 - minScoredUser.Item2) / 2;
-                        if (scoreToStand < 0)
-                        {
-                            scoreToStand = 0;
-                        }
-
-                        listener.onLastSetReached(minScoredUser.Item1, secondMinScoredUser.Item1, $"{minScoredUser.Item1.user.name} will stand at {scoreToStand} against {secondMinScoredUser.Item1.user.name}");
-
+                        scoreToStand = 0;
                     }
+
+                    listener.onLastSetReached(minScoredUser.Item1, secondMinScoredUser.Item1, $"{minScoredUser.Item1.user.name} will stand at {scoreToStand} against {secondMinScoredUser.Item1.user.name}");
                 }
                 else
                 {
@@ -238,7 +208,7 @@ namespace ScoreboardTracker.ViewModels
             catch (Exception ex)
             {
                 Debug.WriteLine(ex.Message);
-                page.ShowToast(ex.Message);
+                _page.ShowToast(ex.Message);
             }
         }
     }

@@ -1,4 +1,7 @@
 ﻿using System.ComponentModel;
+using Autofac;
+using ScoreboardTracker.Common.Interfaces;
+using ScoreboardTracker.ViewModels;
 using Xamarin.Forms;
 
 namespace ScoreboardTracker.Views
@@ -11,6 +14,7 @@ namespace ScoreboardTracker.Views
         public StatisticsPage()
         {
             InitializeComponent();
+            BindingContext = new StatisticsViewModel(App.DiResolver.Resolve<IScoreboardRepository>());
         }
     }
 }
