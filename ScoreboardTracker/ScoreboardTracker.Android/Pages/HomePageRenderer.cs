@@ -19,20 +19,26 @@ using ScoreboardTracker.Common;
 using ScoreboardTracker.Common.Interfaces;
 using Plugin.Toast;
 using System.Collections.Generic;
+using Android.Animation;
+using Android.Support.Constraints;
 using Android.Support.Design.Widget;
+using Android.Support.V4.View;
 using Autofac;
 using Com.Airbnb.Lottie;
+using Java.Lang;
 using Xamarin.Essentials;
 using static Android.Support.V7.Widget.GridLayoutManager;
+using Exception = System.Exception;
 using Group = Android.Support.Constraints.Group;
+using Math = System.Math;
 
 [assembly: ExportRenderer(typeof(HomePage), typeof(HomePageRenderer))]
 namespace ScoreboardTracker.Droid.Pages
 {
-    public class HomePageRenderer : PageRenderer, IGameScoreHandlerListener, IPage
+    public class HomePageRenderer : PageRenderer, IGameScoreHandlerListener, IPage, ValueAnimator.IAnimatorUpdateListener, Animator.IAnimatorListener
     {
         private Android.Widget.Button _buttonStartGame;
-        private Android.Widget.Button _buttonEndGame;
+        private Android.Widget.Button _buttonFinishGame;
         private Android.Widget.Button _buttonRetry;
         private TextView _textViewLastSetReached;
         private TextView _textViewProgress;
@@ -41,7 +47,15 @@ namespace ScoreboardTracker.Droid.Pages
         private Group _groupControls;
         private Group _groupProgressControls;
         private Group _groupErrorControls;
+        private ConstraintLayout _groupWinner;
         private LottieAnimationView _progressView;
+        private LottieAnimationView _winnerView;
+        private ImageView _ivWinner;
+        private int _cxPosition;
+        private int _cyPosition;
+        private float _finalRadius;
+        private bool _isWinnerRevealing;
+
 
         private readonly MainViewModel _viewModel;
         private Activity _activity;
@@ -76,7 +90,7 @@ namespace ScoreboardTracker.Droid.Pages
 
         private void showSnackbar(string message, int duration = Snackbar.LengthIndefinite)
         {
-            Snackbar.Make(this,message , duration).Show();
+            Snackbar.Make(this, message, duration).Show();
         }
 
         protected override void OnAttachedToWindow()
@@ -119,6 +133,7 @@ namespace ScoreboardTracker.Droid.Pages
         {
             _activity = Context as Activity;
             _view = _activity?.LayoutInflater.Inflate(Resource.Layout.HomePage, this, false);
+            _activity?.Window.SetSoftInputMode(SoftInput.AdjustResize);
         }
 
         private void initRecyclerView()
@@ -128,6 +143,7 @@ namespace ScoreboardTracker.Droid.Pages
             _rvUsers.SetLayoutManager(layoutManager);
             UserScoreAdapter mAdapter = new UserScoreAdapter(_viewModel.CurrentGame, this);
             _rvUsers.SetAdapter(mAdapter);
+            ViewCompat.SetNestedScrollingEnabled(_rvUsers, false);
         }
 
         void initControlsAndEventHandlers()
@@ -151,49 +167,87 @@ namespace ScoreboardTracker.Droid.Pages
             _groupControls = _view.FindViewById<Group>(Resource.Id.controls);
             _groupProgressControls = _view.FindViewById<Group>(Resource.Id.progressControls);
             _groupErrorControls = _view.FindViewById<Group>(Resource.Id.errorControls);
+            _groupWinner = _view.FindViewById<ConstraintLayout>(Resource.Id.clWinner);
             _progressView = _view.FindViewById<LottieAnimationView>(Resource.Id.progressBar);
+            _winnerView = _view.FindViewById<LottieAnimationView>(Resource.Id.animViewWinner);
+            _ivWinner = _view.FindViewById<ImageView>(Resource.Id.ivWinner);
         }
 
         private void initButtonStop()
         {
-            _buttonEndGame = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonEndGame);
-            _buttonEndGame.Click += (sender, e) =>
+            _buttonFinishGame = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonEndGame);
+            _buttonFinishGame.Click += (sender, e) => { onFinishGameButtonClicked(); };
+        }
+
+        private void onFinishGameButtonClicked()
+        {
+            if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
-                if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+                showError("No internet", onFinishGameButtonClicked);
+                return;
+            }
+
+            Task.Run(async () =>
+            {
+                showProgressDialog("Saving data");
+                var result = await _viewModel.onEndGame(_viewModel.CurrentGame);
+                if (result.Item1)
                 {
-                    showError("No internet", initButtonStop);
-                    return;
+                    if (!string.IsNullOrWhiteSpace(result.Item2))
+                    {
+                        ShowToast(result.Item2);
+                    }
+
+                    _activity.RunOnUiThread(() =>
+                    {
+                        var winnerProfile = _viewModel.CurrentGame.scores
+                            .FirstOrDefault(u => u.userId == _viewModel.WinnerId)?.user.profileUrl;
+
+                        showWinnerAnimation(winnerProfile);
+
+                        _buttonStartGame.Visibility = ViewStates.Visible;
+                        _buttonFinishGame.Visibility = ViewStates.Gone;
+                    });
+                    _viewModel.CurrentGame = null;
+                    await _viewModel.onStartGame();
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(result.Item2))
+                    {
+                        ShowToast(result.Item2);
+                    }
                 }
 
-                Task.Run(async () =>
-                {
-                    var result = await _viewModel.onEndGame(_viewModel.CurrentGame);
+                dismissProgressDialog();
+            });
+        }
 
-                    showProgressDialog("Saving data");
+        private void showWinnerAnimation(string winnerImageUrl)
+        {
+            if (_cxPosition == 0)
+            {
+                _cxPosition = _ivWinner.MeasuredWidth / 2;
+                _cyPosition = _ivWinner.MeasuredHeight / 2;
+                _finalRadius = Math.Max(_ivWinner.Width, val2: _ivWinner.Height);
+            }
 
-                    if (result.Item1)
-                    {
-                        if (!string.IsNullOrWhiteSpace(result.Item2))
-                        {
-                            ShowToast(result.Item2);
-                        }
-                        _activity.RunOnUiThread(() =>
-                        {
-                            _buttonStartGame.Visibility = ViewStates.Visible;
-                            _buttonEndGame.Visibility = ViewStates.Gone;
-                        });
-                        await _viewModel.onStartGame();
-                    }
-                    else
-                    {
-                        if (!string.IsNullOrWhiteSpace(result.Item2))
-                        {
-                            ShowToast(result.Item2);
-                        }
-                    }
-                    dismissProgressDialog();
-                });
-            };
+            Glide
+                .With(_activity)
+                .Load(winnerImageUrl)
+                .Apply(RequestOptions.CenterCropTransform()).Into(_ivWinner);
+
+            _isWinnerRevealing = true;
+
+
+            Animator anim =
+                ViewAnimationUtils.CreateCircularReveal(_groupWinner, _cxPosition, _cyPosition, 0, _finalRadius);
+
+            _groupWinner.Visibility = ViewStates.Visible;
+            _winnerView.PlayAnimation();
+            anim.SetDuration(2000);
+            anim.AddListener(this);
+            anim.Start();
         }
 
         private void initButtonRetry()
@@ -204,25 +258,25 @@ namespace ScoreboardTracker.Droid.Pages
         private void initButtonStart()
         {
             _buttonStartGame = _view.FindViewById<Android.Widget.Button>(Resource.Id.buttonStartGame);
-            _buttonStartGame.Click += (sender, e) =>
+            _buttonStartGame.Click += (sender, e) => { onStartGameButtonClicked(); };
+        }
+
+        private void onStartGameButtonClicked()
+        {
+            if (Connectivity.NetworkAccess != NetworkAccess.Internet)
             {
-                if (Connectivity.NetworkAccess != NetworkAccess.Internet)
+                showError("No internet", onStartGameButtonClicked);
+                return;
+            }
+
+            Task.Run(async () =>
+            {
+                var result = await _viewModel.onStartGame();
+                if (result.Item1)
                 {
-                    showError("No internet", initButtonStart);
-                    return;
+                    _activity.RunOnUiThread(() => { setStartAndStopButtonVisibility(result.Item1); });
                 }
-                Task.Run(async () =>
-                {
-                    var result = await _viewModel.onStartGame();
-                    if (result.Item1)
-                    {
-                        _activity.RunOnUiThread(() =>
-                        {
-                            setStartAndStopButtonVisibility(result.Item1);
-                        });
-                    }
-                });
-            };
+            });
         }
 
         private void showError(string message, Action action)
@@ -237,7 +291,7 @@ namespace ScoreboardTracker.Droid.Pages
         private void setStartAndStopButtonVisibility(bool hasInProgressGame)
         {
             _buttonStartGame.Visibility = hasInProgressGame ? ViewStates.Gone : ViewStates.Visible;
-            _buttonEndGame.Visibility = hasInProgressGame ? ViewStates.Visible : ViewStates.Gone;
+            _buttonFinishGame.Visibility = hasInProgressGame ? ViewStates.Visible : ViewStates.Gone;
         }
 
         protected override void OnLayout(bool changed, int l, int t, int r, int b)
@@ -343,6 +397,49 @@ namespace ScoreboardTracker.Droid.Pages
                 _groupProgressControls.Visibility = ViewStates.Gone;
                 _progressView.CancelAnimation();
             });
+        }
+
+        public void OnAnimationUpdate(ValueAnimator animation)
+        {
+            float value = ((Float)(animation.AnimatedValue)).FloatValue();
+            // Set translation of your view here. Position can be calculated
+            // out of value. This code should move the view in a half circle.
+            _ivWinner.TranslationX = ((float)(350.0 * Math.Sin(value * Math.PI)));
+            _ivWinner.TranslationY = ((float)(20.0 * Math.Cos(value * Math.PI)));
+        }
+
+        public void OnAnimationCancel(Animator animation)
+        {
+        }
+
+        public void OnAnimationEnd(Animator animation)
+        {
+            if (_isWinnerRevealing)
+            {
+                Animator animClose =
+                    ViewAnimationUtils.CreateCircularReveal(_groupWinner, _cxPosition, _cyPosition, _finalRadius, 0);
+                animClose.StartDelay = 3000;
+                animClose.SetDuration(2000);
+                animClose.AddListener(this);
+                _isWinnerRevealing = false;
+                animClose.Start();
+            }
+            else
+            {
+                _groupWinner.Visibility = ViewStates.Gone;
+                _winnerView.CancelAnimation();
+            }
+
+
+        }
+
+        public void OnAnimationRepeat(Animator animation)
+        {
+        }
+
+        public void OnAnimationStart(Animator animation)
+        {
+
         }
     }
 

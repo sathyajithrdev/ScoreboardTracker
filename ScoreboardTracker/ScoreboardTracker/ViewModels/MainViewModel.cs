@@ -8,6 +8,7 @@ using Xamarin.Forms;
 
 using ScoreboardTracker.Common.Interfaces;
 using ScoreboardTracker.Models;
+using ScoreboardTracker.Services;
 
 namespace ScoreboardTracker.ViewModels
 {
@@ -25,6 +26,8 @@ namespace ScoreboardTracker.ViewModels
 
         public Game CurrentGame;
 
+        public string WinnerId { get; private set; }
+
         public MainViewModel(IPage page, IScoreboardRepository scoreboardRepository)
         {
             _page = page;
@@ -34,6 +37,8 @@ namespace ScoreboardTracker.ViewModels
         public async Task initGroupAndUsers()
         {
             Users = new List<User>();
+
+            (_scoreboardRepository as ScoreboardRepository)?.AddDummyDataGroup();
 
             try
             {
@@ -55,7 +60,7 @@ namespace ScoreboardTracker.ViewModels
 
                 var allUsers = await _scoreboardRepository.GetAllUsers();
 
-                Users = allUsers.Where(u => group.userIds.Contains(u.userId)).ToList();
+                Users = allUsers?.Where(u => group.userIds.Contains(u.userId)).ToList();
 
                 await populateOnGoingGame();
 
@@ -144,11 +149,10 @@ namespace ScoreboardTracker.ViewModels
                                                                              curMax.scores.Sum() ? s : curMax);
 
                     CurrentGame.winnerId = winner.userId;
+                    WinnerId = winner.userId;
                     CurrentGame.looserId = looser.userId;
 
                     await _scoreboardRepository.UpdateGame(_groupDocId, CurrentGame);
-
-                    CurrentGame = null;
 
                     MessagingCenter.Send(this, "gameCompleted");
 

@@ -6,6 +6,7 @@
             mc:Ignorable="d"
             xmlns:views="clr-namespace:ScoreboardTracker.Views"
             NavigationPage.HasNavigationBar="False"
+            SelectedTabColor="#303F9F"
             BackgroundImageSource="background.png"
             x:Class="ScoreboardTracker.Views.MainPage">
 

@@ -5,6 +5,7 @@ using Xamarin.Forms;
 
 using ScoreboardTracker.Common.Interfaces;
 using ScoreboardTracker.Models;
+using Xamarin.Essentials;
 
 namespace ScoreboardTracker.ViewModels
 {
@@ -15,11 +16,7 @@ namespace ScoreboardTracker.ViewModels
         public ObservableCollection<Statistics> Statistics
         {
             get => _statistics;
-            set
-            {
-                _statistics = value;
-                OnPropertyChanged(nameof(Statistics));
-            }
+            set => SetProperty(ref _statistics, value);
         }
         public StatisticsViewModel(IScoreboardRepository scoreboardRepository)
         {
@@ -28,7 +25,7 @@ namespace ScoreboardTracker.ViewModels
             populateStatisticsData();
             MessagingCenter.Subscribe<MainViewModel>(this, "gameCompleted", (sender) =>
             {
-                populateStatisticsData();
+                MainThread.BeginInvokeOnMainThread(populateStatisticsData);
             });
         }
 

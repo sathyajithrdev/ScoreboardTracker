@@ -18,36 +18,41 @@
             <Color x:Key="LightTextColor">#999999</Color>
         </ResourceDictionary>
     </ContentPage.Resources>
-    <cards:CoverFlowView 
-                PositionShiftValue="60"
-                IsCyclical="false"
-                IsAutoInteractionRunning="{Binding IsAutoAnimationRunning}"
-                IsUserInteractionRunning="{Binding IsUserInteractionRunning}"
-                SelectedIndex="{Binding CurrentIndex}"
-                ItemsSource="{Binding Statistics}">
-        <cards:CoverFlowView.ItemTemplate>
-            <DataTemplate>
-                <ContentView Padding="40">
-                    <StackLayout>
-                        <Frame 
-                            VerticalOptions="Center"
-                            HorizontalOptions="Fill"
-                            HeightRequest="290"
-                            Padding="0" 
-                            HasShadow="false"
-                            IsClippedToBounds="true"
-                            CornerRadius="10"
-                            BackgroundColor="Bisque">
 
-                            <ffimage:CachedImage Source="{Binding ImageSource}" Aspect="AspectFill"/>
+    <StackLayout Orientation="Vertical" VerticalOptions="Center">
+        <cards:CoverFlowView 
+            PositionShiftValue="60"
+            IsCyclical="false"
+            IsAutoInteractionRunning="{Binding IsAutoAnimationRunning}"
+            IsUserInteractionRunning="{Binding IsUserInteractionRunning}"
+            SelectedIndex="{Binding CurrentIndex}"
+            ItemsSource="{Binding Statistics}">
+            <cards:CoverFlowView.ItemTemplate>
+                <DataTemplate>
+                    <ContentView Padding="40">
+                        <StackLayout>
+                            <Frame 
+                                VerticalOptions="Center"
+                                HorizontalOptions="Fill"
+                                HeightRequest="290"
+                                Padding="0" 
+                                HasShadow="false"
+                                IsClippedToBounds="true"
+                                CornerRadius="10"
+                                BackgroundColor="Bisque">
 
-                        </Frame>
-                        <Label FontSize="Medium" Text="{Binding statisticsHeader}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
-                        <Label FontSize="Large" Text="{Binding statisticsValue}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
-                    </StackLayout>
-                </ContentView>
-            </DataTemplate>
-        </cards:CoverFlowView.ItemTemplate>
-    </cards:CoverFlowView>
+                                <ffimage:CachedImage Source="{Binding ImageSource}" Aspect="AspectFill"/>
+
+                            </Frame>
+                            <Label FontSize="Medium" Text="{Binding statisticsHeader}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                            <Label FontSize="Large" Text="{Binding statisticsValue}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                        </StackLayout>
+                    </ContentView>
+                </DataTemplate>
+            </cards:CoverFlowView.ItemTemplate>
+        </cards:CoverFlowView>
+
+    </StackLayout>
+
 
 </ContentPage>
