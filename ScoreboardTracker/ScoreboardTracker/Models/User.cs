@@ -10,8 +10,11 @@ namespace ScoreboardTracker.Models
 
         public string profileUrl { get; set; }
 
-        //[Ignored]
-        //public UserScore userScore { get; set; }
+        [Ignored]
+        public int winCount { get; set; }
+
+        [Ignored]
+        public int lossCount { get; set; }
 
         //Default constructor required for firestore
         public User()

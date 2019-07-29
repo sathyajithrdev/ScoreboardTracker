@@ -55,12 +55,15 @@ namespace ScoreboardTracker.Droid.Pages
         private int _cyPosition;
         private float _finalRadius;
         private bool _isWinnerRevealing;
+        private UserScoreAdapter _userScoreAdapter;
 
 
         private readonly MainViewModel _viewModel;
         private Activity _activity;
         private RecyclerView _rvUsers;
         private bool _isShowingOfflineSnackbar;
+        private bool _neglectFcmChange;
+
         //private ProgressDialog _mProgressDialog;
 
         public HomePageRenderer(Context context) : base(context)
@@ -97,6 +100,7 @@ namespace ScoreboardTracker.Droid.Pages
         {
             populateUserData();
         }
+
         protected override void OnElementChanged(ElementChangedEventArgs<Page> e)
         {
             base.OnElementChanged(e);
@@ -136,14 +140,13 @@ namespace ScoreboardTracker.Droid.Pages
             _activity?.Window.SetSoftInputMode(SoftInput.AdjustResize);
         }
 
-        private void initRecyclerView()
+        private void refreshUserScores()
         {
-            _rvUsers = _view.FindViewById<RecyclerView>(Resource.Id.rvUsers);
-            var layoutManager = new LinearLayoutManager(_activity);
-            _rvUsers.SetLayoutManager(layoutManager);
-            UserScoreAdapter mAdapter = new UserScoreAdapter(_viewModel.CurrentGame, this);
-            _rvUsers.SetAdapter(mAdapter);
-            ViewCompat.SetNestedScrollingEnabled(_rvUsers, false);
+            //if (!_neglectFcmChange)
+            //{
+                _userScoreAdapter.setUserDetails(_viewModel.CurrentGame);
+            //}
+            //_neglectFcmChange = false;
         }
 
         void initControlsAndEventHandlers()
@@ -153,6 +156,17 @@ namespace ScoreboardTracker.Droid.Pages
             initButtonStart();
             initButtonStop();
             initButtonRetry();
+            initRecyclerView();
+        }
+
+        private void initRecyclerView()
+        {
+            _rvUsers = _view.FindViewById<RecyclerView>(Resource.Id.rvUsers);
+            var layoutManager = new LinearLayoutManager(_activity);
+            _rvUsers.SetLayoutManager(layoutManager);
+            _userScoreAdapter = new UserScoreAdapter(_viewModel.CurrentGame, this);
+            _rvUsers.SetAdapter(_userScoreAdapter);
+            ViewCompat.SetNestedScrollingEnabled(_rvUsers, false);
         }
 
         private void initTextViews()
@@ -207,9 +221,13 @@ namespace ScoreboardTracker.Droid.Pages
 
                         _buttonStartGame.Visibility = ViewStates.Visible;
                         _buttonFinishGame.Visibility = ViewStates.Gone;
+                        //_textViewLastSetReached.Visibility = ViewStates.Invisible;
+                        //_textViewLastSetReached.Text = string.Empty;
                     });
+                    await Task.Delay(6000);
                     _viewModel.CurrentGame = null;
                     await _viewModel.onStartGame();
+                    await _viewModel.populatePlayerDetails();
                 }
                 else
                 {
@@ -307,6 +325,7 @@ namespace ScoreboardTracker.Droid.Pages
 
         public void OnScoreChanged()
         {
+            _neglectFcmChange = true;
             _viewModel.onScoreChangedListener(_viewModel.CurrentGame);
         }
 
@@ -319,7 +338,7 @@ namespace ScoreboardTracker.Droid.Pages
             _activity.RunOnUiThread(() =>
             {
                 setStartAndStopButtonVisibility(!_viewModel.CurrentGame.isCompleted);
-                initRecyclerView();
+                refreshUserScores();
             });
         }
 
@@ -375,12 +394,6 @@ namespace ScoreboardTracker.Droid.Pages
         {
             _activity.RunOnUiThread(() =>
             {
-                //if (_mProgressDialog == null)
-                //{
-                //    _mProgressDialog = new ProgressDialog(_activity);
-                //}
-                //_mProgressDialog.SetMessage(message);
-                //_mProgressDialog.Show();
                 _textViewProgress.Text = message;
                 _groupControls.Visibility = ViewStates.Invisible;
                 _groupProgressControls.Visibility = ViewStates.Visible;
@@ -447,13 +460,15 @@ namespace ScoreboardTracker.Droid.Pages
 
     public class UserScoreAdapter : RecyclerView.Adapter
     {
-        private readonly Game _mGame;
+        private Game _mGame;
         private readonly HomePageRenderer _mContext;
+        private ScoreAdapter _scoreAdapter;
 
         public UserScoreAdapter(Game game, HomePageRenderer context)
         {
             _mGame = game;
             _mContext = context;
+            _scoreAdapter = new ScoreAdapter(context, new UserScore());
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup parent, int viewType)
@@ -471,6 +486,8 @@ namespace ScoreboardTracker.Droid.Pages
             if (vh == null) return;
             UserScore userScore = _mGame.scores[position];
             vh.TvUserName.Text = userScore.user.name;
+            vh.TvWins.Text = userScore.user.winCount.ToString();
+            vh.TvLoss.Text = userScore.user.lossCount.ToString();
             Glide
                 .With(_mContext)
                 .Load(userScore.user.profileUrl)
@@ -479,10 +496,18 @@ namespace ScoreboardTracker.Droid.Pages
             GridLayoutManager layoutManager = new GridLayoutManager(_mContext.Context, 3);
             layoutManager.SetSpanSizeLookup(new ScoreSpanSizeLookup(userScore.scores.Count));
             vh.RvUserScore.SetLayoutManager(layoutManager);
-            vh.RvUserScore.SetAdapter(new ScoreAdapter(_mContext, userScore));
+            _scoreAdapter = new ScoreAdapter(_mContext, userScore);
+            vh.RvUserScore.SetAdapter(_scoreAdapter);
         }
 
-        public override int ItemCount => _mGame.scores.Count;
+        internal void setUserDetails(Game currentGame)
+        {
+            _mGame = currentGame;
+
+            NotifyDataSetChanged();
+        }
+
+        public override int ItemCount => _mGame?.scores?.Count ?? 0;
     }
 
     public class ScoreSpanSizeLookup : SpanSizeLookup
@@ -505,11 +530,15 @@ namespace ScoreboardTracker.Droid.Pages
     {
         public ImageView IvUserProfile { get; }
         public TextView TvUserName { get; }
+        public TextView TvWins { get; }
+        public TextView TvLoss { get; }
         public RecyclerView RvUserScore { get; }
 
         public UserScoreViewHolder(View itemView) : base(itemView)
         {
             TvUserName = itemView.FindViewById<TextView>(Resource.Id.tvUserName);
+            TvWins = itemView.FindViewById<TextView>(Resource.Id.tvWins);
+            TvLoss = itemView.FindViewById<TextView>(Resource.Id.tvLoss);
             IvUserProfile = itemView.FindViewById<ImageView>(Resource.Id.ivUser);
             RvUserScore = itemView.FindViewById<RecyclerView>(Resource.Id.rvScore);
         }
@@ -554,11 +583,17 @@ namespace ScoreboardTracker.Droid.Pages
             }
             ScoreViewHolder vh = holder as ScoreViewHolder;
             if (vh == null) return;
+
             vh.EtScore.Text = _mUserScore.scores[position]?.ToString();
             SetTotalScoreTextBox(vh);
             vh.EtScore.AfterTextChanged += (sender, args) =>
             {
+
+                if (_mUserScore.scores[position] == CommonUtils.NullIfEmpty(vh.EtScore.Text))
+                    return;
+
                 _mUserScore.scores[position] = CommonUtils.NullIfEmpty(vh.EtScore.Text);
+                
 
                 if (position == _mUserScore.scores.Count - 1)
                 {

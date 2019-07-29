@@ -12,7 +12,7 @@ using ScoreboardTracker.Services;
 
 namespace ScoreboardTracker.ViewModels
 {
-    public class MainViewModel : BaseViewModel, IGameScoreHandler
+    public class MainViewModel : BaseViewModel, IGameScoreHandler, IGameScoreChangeListener
     {
         private List<User> Users { get; set; }
 
@@ -38,8 +38,6 @@ namespace ScoreboardTracker.ViewModels
         {
             Users = new List<User>();
 
-            (_scoreboardRepository as ScoreboardRepository)?.AddDummyDataGroup();
-
             try
             {
                 if (IsBusy)
@@ -64,11 +62,14 @@ namespace ScoreboardTracker.ViewModels
 
                 await populateOnGoingGame();
 
+                await populatePlayerDetails();
 
                 if (CurrentGame != null)
                 {
                     listener?.onUserScoresChanged();
                 }
+                initGameScoreChangeListener();
+                //(_scoreboardRepository as ScoreboardRepository).AddDummyDataGroup(_groupDocId);
                 IsBusy = false;
             }
             catch (Exception ex)
@@ -77,6 +78,11 @@ namespace ScoreboardTracker.ViewModels
                 _page.ShowToast(ex.Message);
                 IsBusy = false;
             }
+        }
+
+        private void initGameScoreChangeListener()
+        {
+            //_scoreboardRepository.StartGameScoreListner(_groupDocId, this);
         }
 
         private void initScoreValues()
@@ -131,6 +137,33 @@ namespace ScoreboardTracker.ViewModels
                     s.user = Users.FirstOrDefault(u => u.userId == s.userId);
                 });
                 CurrentGame = onGoingGame;
+            }
+        }
+
+        public async Task populatePlayerDetails()
+        {
+            var allGames = await _scoreboardRepository.GetCompletedGames(_groupDocId);
+
+            if (allGames != null)
+            {
+                var playerWinStats = allGames.GroupBy(g => g.winnerId).Select(p => new { id = p.Key, wins = p.Count() });
+                var playerLossStats = allGames.GroupBy(g => g.looserId).Select(p => new { id = p.Key, wins = p.Count() });
+
+                Users.ForEach(u =>
+                {
+                    u.winCount = playerWinStats.FirstOrDefault(p => p.id == u.userId)?.wins ?? 0;
+                    u.lossCount = playerLossStats.FirstOrDefault(p => p.id == u.userId)?.wins ?? 0;
+                });
+
+                if (CurrentGame != null)
+                {
+                    CurrentGame.scores.ForEach(s =>
+                    {
+                        s.user = Users.FirstOrDefault(u => u.userId == s.userId);
+                    });
+
+                    listener?.onUserScoresChanged();
+                }
             }
         }
 
@@ -214,6 +247,24 @@ namespace ScoreboardTracker.ViewModels
                 Debug.WriteLine(ex.Message);
                 _page.ShowToast(ex.Message);
             }
+        }
+
+        public void gameScoreUpdated()
+        {
+            Task.Run(async () =>
+            {
+                await populateOnGoingGame();
+                listener?.onUserScoresChanged();
+            });
+        }
+
+        public void newGameCreated()
+        {
+            Task.Run(async () =>
+            {
+                await populateOnGoingGame();
+                await populatePlayerDetails();
+            });
         }
     }
 }

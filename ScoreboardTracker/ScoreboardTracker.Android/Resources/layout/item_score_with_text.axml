@@ -20,11 +20,13 @@
 
     <TextView
         android:id="@+id/tvTotalScore"
-        android:layout_width="150dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:maxWidth="150dp"
-        android:textSize="16dp"
+        android:maxWidth="150dp"	
+        android:textSize="18dp"
         android:textStyle="bold"
+		android:padding="6dp"
+		android:background="@color/colorTransparentGrey"
         app:layout_constrainedWidth="true"
         android:layout_marginStart="6dp"
         android:textColor="@color/colorPrimaryDark"

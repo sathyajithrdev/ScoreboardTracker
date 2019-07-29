@@ -4,6 +4,7 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
+             BackgroundImageSource="background"
              x:Class="ScoreboardTracker.Views.StatisticsPage"
              NavigationPage.HasNavigationBar="False"
              xmlns:vm="clr-namespace:ScoreboardTracker.ViewModels"
@@ -23,8 +24,6 @@
         <cards:CoverFlowView 
             PositionShiftValue="60"
             IsCyclical="false"
-            IsAutoInteractionRunning="{Binding IsAutoAnimationRunning}"
-            IsUserInteractionRunning="{Binding IsUserInteractionRunning}"
             SelectedIndex="{Binding CurrentIndex}"
             ItemsSource="{Binding Statistics}">
             <cards:CoverFlowView.ItemTemplate>
@@ -44,8 +43,8 @@
                                 <ffimage:CachedImage Source="{Binding ImageSource}" Aspect="AspectFill"/>
 
                             </Frame>
-                            <Label FontSize="Medium" Text="{Binding statisticsHeader}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
-                            <Label FontSize="Large" Text="{Binding statisticsValue}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                            <Label TextColor="White" FontSize="Medium" Text="{Binding statisticsHeader}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
+                            <Label TextColor="White" FontSize="Large" Text="{Binding statisticsValue}" HorizontalOptions="Center" HorizontalTextAlignment="Center"/>
                         </StackLayout>
                     </ContentView>
                 </DataTemplate>

@@ -14,61 +14,32 @@ namespace ScoreboardTracker.Services
     public class ScoreboardRepository : IScoreboardRepository
     {
 
-        public async void AddDummyDataGroup()
+        public async void AddDummyDataGroup(string groupId)
         {
             await Task.Run(async () =>
                 {
-                    for (var i = 1; i <= 389; i++)
+                    for (var i = 1; i <= 135; i++)
                     {
-                        var game = new Game();
-                        game.scores = new List<UserScore>();
-                        //jith
-                        game.scores.Add(new UserScore()
-                        {
-                            userId = "28bab11a-3ed7-4af0-b447-e81a9b471bd6",
-                            scores = new List<int?>()
-                                {i <= 134 ? 200 : 100, 100, 100, 100, 100, 100, i <= 135 ? 98 : 100}
-                        });
+                        var gameDocQuery = await CrossCloudFirestore.Current
+                                                   .Instance
+                                                   .GetCollection($"groups/{groupId}/games")
+                                                   .WhereEqualsTo("isCompleted", true)
+                                                   .GetDocumentsAsync();
 
-                        //achan
-                        game.scores.Add(new UserScore()
+                        List<Game> games = gameDocQuery?.ToObjects<Game>()?.ToList();
+
+                        var toUpdate = games.Where(g => g.scores.Any(s => s.scores.Sum() == 800)).ToList();
+
+                        toUpdate?.ForEach(g =>
                         {
-                            userId = "5b24a1df-f342-4119-92c3-da004d0d96af",
-                            scores = new List<int?>()
+                            g.scores.ForEach(s =>
                             {
-                                i > 134 && i <= 279 ? 200 : 100, 100, 100, 100, 100, 100, i > 135 && i < 240 ? 98 : 100
-                            }
+                                s.scores.ForEach(u => u = u / 2);
+                            });
+                            g.scores = g.scores;
+                            //await UpdateGame(groupId, g);
+                            //Thread.Sleep(400);
                         });
-
-                        //najan
-                        game.scores.Add(new UserScore()
-                        {
-                            userId = "84cd8240-cf44-45f8-9277-3041f9dbde80",
-                            scores = new List<int?>() { i > 279 ? 200 : 100, 100, 100, 100, 100, 100, i > 240 ? 98 : 100 }
-                        });
-
-                        var winner = game.scores.Aggregate((curMin, s) => curMin == null || (s.scores.Sum() ?? 0) <
-                                                                          curMin.scores.Sum()
-                            ? s
-                            : curMin);
-
-                        var looser = game.scores.Aggregate((curMax, s) => curMax == null || (s.scores.Sum() ?? 0) >
-                                                                          curMax.scores.Sum()
-                            ? s
-                            : curMax);
-
-                        game.winnerId = winner.userId;
-
-                        game.looserId = looser.userId;
-                        game.isCompleted = true;
-
-                        await CrossCloudFirestore.Current
-                            .Instance
-                            .GetCollection("groups/VVmSk2oLEPAdPu9agt9T/games")
-                            .AddDocumentAsync(game);
-
-                        Thread.Sleep(400);
-
                     }
                 }
              );
@@ -100,6 +71,17 @@ namespace ScoreboardTracker.Services
             var gameDocQuery = await CrossCloudFirestore.Current
                 .Instance
                 .GetCollection($"groups/{groupId}/games")
+                .GetDocumentsAsync();
+
+            return gameDocQuery?.ToObjects<Game>()?.ToList();
+        }
+
+        public async Task<List<Game>> GetCompletedGames(string groupId)
+        {
+            var gameDocQuery = await CrossCloudFirestore.Current
+                .Instance
+                .GetCollection($"groups/{groupId}/games")
+                .WhereEqualsTo("isCompleted", true)
                 .GetDocumentsAsync();
 
             return gameDocQuery?.ToObjects<Game>()?.ToList();
@@ -163,8 +145,28 @@ namespace ScoreboardTracker.Services
                 Debug.WriteLine(ex.Message);
                 return null;
             }
+        }
 
-
+        public void StartGameScoreListner(string groupId, IGameScoreChangeListener listener)
+        {
+            CrossCloudFirestore.Current
+                   .Instance
+                   .GetCollection($"groups/{groupId}/games")
+                   .WhereEqualsTo("isCompleted", false)
+                   .AddSnapshotListener((snapshot, error) =>
+                   {
+                       if (snapshot != null)
+                       {
+                           if (snapshot.DocumentChanges.Any(d => d.Type == DocumentChangeType.Added))
+                           {
+                               listener.newGameCreated();
+                           }
+                           else if (snapshot.DocumentChanges.Any(d => d.Type == DocumentChangeType.Modified))
+                           {
+                               listener.gameScoreUpdated();
+                           }
+                       }
+                   });
         }
     }
 }

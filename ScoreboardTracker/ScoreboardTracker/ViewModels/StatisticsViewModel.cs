@@ -61,6 +61,16 @@ namespace ScoreboardTracker.ViewModels
             var lossMatchCount = enumerable
                 .Aggregate((currentMin, next) => currentMin == null || next.noOfLoss < currentMin.noOfLoss ? next : currentMin);
 
+            var maxLossMatchCount = enumerable
+                .Aggregate((currentMax, next) => currentMax == null || next.noOfLoss > currentMax.noOfLoss ? next : currentMax);
+
+            var minScore = completedGames
+                .Aggregate((currentMin, next) => currentMin == null || next.scores.Min(s => s.scores.Sum()) < currentMin.scores.Min(s => s.scores.Sum()) ? next : currentMin);
+
+            var maxScore = completedGames
+                .Aggregate((currentMax, next) => currentMax == null || next.scores.Max(s => s.scores.Sum()) > currentMax.scores.Max(s => s.scores.Sum()) ? next : currentMax);
+
+
             Statistics.Add(new Statistics()
             {
                 statisticsHeader = "Most Wins",
@@ -74,6 +84,27 @@ namespace ScoreboardTracker.ViewModels
                 statisticsHeader = "Least Defeats",
                 statisticsValue = lossMatchCount.noOfLoss.ToString(),
                 user = users.FirstOrDefault(u => u.userId == lossMatchCount.userId)
+            });
+
+            Statistics.Add(new Statistics()
+            {
+                statisticsHeader = "Minimum Score",
+                statisticsValue = minScore.scores.FirstOrDefault(s => s.userId == minScore.winnerId)?.scores.Sum().ToString(),
+                user = users.FirstOrDefault(u => u.userId == minScore.winnerId)
+            });
+
+            //Statistics.Add(new Statistics()
+            //{
+            //    statisticsHeader = "Max Score Defeat",
+            //    statisticsValue = maxScore.scores.FirstOrDefault(s => s.userId == maxScore.looserId)?.scores.Sum().ToString(),
+            //    user = users.FirstOrDefault(u => u.userId == maxScore.looserId)
+            //});
+
+            Statistics.Add(new Statistics()
+            {
+                statisticsHeader = "Most Defeats",
+                statisticsValue = maxLossMatchCount.noOfLoss.ToString(),
+                user = users.FirstOrDefault(u => u.userId == maxLossMatchCount.userId)
             });
 
             OnPropertyChanged(nameof(Statistics));
