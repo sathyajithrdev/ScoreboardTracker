@@ -24,77 +24,37 @@ namespace ScoreboardTracker.Models
         [JsonIgnore, Ignored]
         public List<UserScore> scores { get; set; }
 
-        //private string _scoresJson;
-
         public Game()
         {
             scores = new List<UserScore>();
         }
 
-        //public Game(FCMGameCollection game)
-        //{
-        //    this.isCompleted = game.isCompleted;
-        //    this.gameId = game.gameId;
-        //    this.scores = JsonConvert.DeserializeObject<List<UserScore>>(game.scoresJson);
-        //}
+        public override bool Equals(object obj)
+        {
+            if (obj == null || this.GetType() != obj.GetType())
+            {
+                return false;
+            }
 
-        //public List<UserScore> getUserScores()
-        //{
-        //    return scores;
-        //}
+            var data = obj as Game;
 
-        //public void addUserScore(UserScore userScore)
-        //{
-        //    if (scores == null)
-        //    {
-        //        scores = new List<UserScore>();
-        //    }
+            return gameId == data.gameId
+                && isCompleted == data.isCompleted
+                && winnerId == data.winnerId
+                && looserId == data.looserId
+                && scoresJson.Equals(data.scoresJson);
+        }
 
-        //    scores.Add(userScore);
-        //    //scoresJson = JsonConvert.SerializeObject(_scores);
-        //}
-
-        //public void removeUserScore(UserScore userScore)
-        //{
-        //    if (scores == null)
-        //    {
-        //        return;
-        //    }
-        //    scores.Remove(userScore);
-        //}
-
-        //public void updateOrInsertUserScore(UserScore userScore)
-        //{
-        //    if (scores == null)
-        //    {
-        //        scores = new List<UserScore>();
-        //    }
-        //    int indexToUpdate = scores.FindIndex(s => s.user.userId == userScore.user.userId);
-        //    if (indexToUpdate >= 0)
-        //    {
-        //        scores[indexToUpdate] = userScore;
-        //    }
-        //    else
-        //    {
-        //        scores.Add(userScore);
-        //    }
-        //    //scoresJson = JsonConvert.SerializeObject(_scores);
-        //}
-
-        //public void addUserScores(List<UserScore> list)
-        //{
-        //    if (scores == null)
-        //    {
-        //        scores = new List<UserScore>();
-        //    }
-        //    scores.AddRange(list);
-        //    //scoresJson = JsonConvert.SerializeObject(_scores);
-        //}
-
-        //public void setUserScoresJson(List<UserScore> list)
-        //{
-        //    scores = null;
-        //    addUserScores(list);
-        //}
+        public override int GetHashCode()
+        {
+            var hashCode = 1508867953;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(gameId);
+            hashCode = hashCode * -1521134295 + isCompleted.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(scoresJson);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(winnerId);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(looserId);
+            hashCode = hashCode * -1521134295 + EqualityComparer<List<UserScore>>.Default.GetHashCode(scores);
+            return hashCode;
+        }
     }
 }

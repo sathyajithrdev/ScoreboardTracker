@@ -62,9 +62,7 @@ namespace ScoreboardTracker.Droid.Pages
         private Activity _activity;
         private RecyclerView _rvUsers;
         private bool _isShowingOfflineSnackbar;
-        private bool _neglectFcmChange;
 
-        //private ProgressDialog _mProgressDialog;
 
         public HomePageRenderer(Context context) : base(context)
         {
@@ -144,7 +142,7 @@ namespace ScoreboardTracker.Droid.Pages
         {
             //if (!_neglectFcmChange)
             //{
-                _userScoreAdapter.setUserDetails(_viewModel.CurrentGame);
+            _userScoreAdapter.setUserDetails(_viewModel.CurrentGame);
             //}
             //_neglectFcmChange = false;
         }
@@ -323,9 +321,13 @@ namespace ScoreboardTracker.Droid.Pages
             _view.Layout(0, 0, r - l, b - t);
         }
 
-        public void OnScoreChanged()
+        public void OnScoreChanged(UserScore userScore)
         {
-            _neglectFcmChange = true;
+            var indexToUpdate = _viewModel.CurrentGame.scores.FindIndex(s => s.userId == userScore.userId);
+            if (indexToUpdate >= 0)
+            {
+                _viewModel.CurrentGame.scores[indexToUpdate] = userScore;
+            }
             _viewModel.onScoreChangedListener(_viewModel.CurrentGame);
         }
 
@@ -462,13 +464,11 @@ namespace ScoreboardTracker.Droid.Pages
     {
         private Game _mGame;
         private readonly HomePageRenderer _mContext;
-        private ScoreAdapter _scoreAdapter;
 
         public UserScoreAdapter(Game game, HomePageRenderer context)
         {
             _mGame = game;
             _mContext = context;
-            _scoreAdapter = new ScoreAdapter(context, new UserScore());
         }
 
         public override RecyclerView.ViewHolder OnCreateViewHolder(ViewGroup parent, int viewType)
@@ -496,15 +496,16 @@ namespace ScoreboardTracker.Droid.Pages
             GridLayoutManager layoutManager = new GridLayoutManager(_mContext.Context, 3);
             layoutManager.SetSpanSizeLookup(new ScoreSpanSizeLookup(userScore.scores.Count));
             vh.RvUserScore.SetLayoutManager(layoutManager);
-            _scoreAdapter = new ScoreAdapter(_mContext, userScore);
-            vh.RvUserScore.SetAdapter(_scoreAdapter);
+            vh.RvUserScore.SetAdapter(new ScoreAdapter(_mContext, userScore));
         }
 
         internal void setUserDetails(Game currentGame)
         {
-            _mGame = currentGame;
-
-            NotifyDataSetChanged();
+            if (!currentGame.Equals(_mGame))
+            {
+                _mGame = currentGame;
+                NotifyDataSetChanged();
+            }
         }
 
         public override int ItemCount => _mGame?.scores?.Count ?? 0;
@@ -593,21 +594,38 @@ namespace ScoreboardTracker.Droid.Pages
                     return;
 
                 _mUserScore.scores[position] = CommonUtils.NullIfEmpty(vh.EtScore.Text);
-                
 
-                if (position == _mUserScore.scores.Count - 1)
+                if (_isInitialLoad == _mUserScore.scores.Count)
                 {
-                    vh.TvTotalScore.Text = _mUserScore.scores.Sum(s => s).ToString();
-                }
-                else
-                {
-                    if (_isInitialLoad == _mUserScore.scores.Count)
+                    if (isNotLastScoreTextField(position))
                     {
                         NotifyItemChanged(_mUserScore.scores.Count - 1, TotalValueChanged);
-                        _mContext.OnScoreChanged();
                     }
+                    _mContext.OnScoreChanged(_mUserScore);
                 }
+
+                //if (position == _mUserScore.scores.Count - 1)
+                //{
+                //    vh.TvTotalScore.Text = _mUserScore.scores.Sum(s => s).ToString();
+                //    if (_mUserScore.scores[position] != null)
+                //    {
+                //        _mContext.OnScoreChanged(_mUserScore);
+                //    }
+                //}
+                //else
+                //{
+                //    if (_isInitialLoad == _mUserScore.scores.Count)
+                //    {
+                //        NotifyItemChanged(_mUserScore.scores.Count - 1, TotalValueChanged);
+                //        _mContext.OnScoreChanged(_mUserScore);
+                //    }
+                //}
             };
+        }
+
+        private bool isNotLastScoreTextField(int position)
+        {
+            return position != _mUserScore.scores.Count - 1;
         }
 
         public override void OnBindViewHolder(RecyclerView.ViewHolder holder, int position, IList<Java.Lang.Object> payloads)

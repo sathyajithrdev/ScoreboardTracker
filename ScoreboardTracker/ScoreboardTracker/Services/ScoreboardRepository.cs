@@ -147,7 +147,7 @@ namespace ScoreboardTracker.Services
             }
         }
 
-        public void StartGameScoreListner(string groupId, IGameScoreChangeListener listener)
+        public void StartGameScoreListener(string groupId, IGameScoreChangeListener listener)
         {
             CrossCloudFirestore.Current
                    .Instance

@@ -15,7 +15,7 @@ namespace ScoreboardTracker.Common.Interfaces
         Task<bool> AddGame(string groupId, Game game);
         Task<bool> UpdateGame(string groupId, Game game);
         Task<bool> DeleteGame(string groupId, string gameId);
-        void StartGameScoreListner(string groupId, IGameScoreChangeListener listener);
+        void StartGameScoreListener(string groupId, IGameScoreChangeListener listener);
 
 
         Task<List<User>> GetAllUsers();

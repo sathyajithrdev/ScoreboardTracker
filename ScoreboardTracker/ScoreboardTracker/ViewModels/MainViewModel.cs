@@ -82,7 +82,7 @@ namespace ScoreboardTracker.ViewModels
 
         private void initGameScoreChangeListener()
         {
-            //_scoreboardRepository.StartGameScoreListner(_groupDocId, this);
+            _scoreboardRepository.StartGameScoreListener(_groupDocId, this);
         }
 
         private void initScoreValues()
