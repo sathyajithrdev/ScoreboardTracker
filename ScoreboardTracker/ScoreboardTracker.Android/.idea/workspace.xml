@@ -2,37 +2,20 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a081e5f6-4a2d-448b-af0f-62a7568b6831" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/Resources/mipmap-hdpi/ic_launcher.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Pages/HomePageRenderer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Pages/HomePageRenderer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Properties/AndroidManifest.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Properties/AndroidManifest.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/Resource.designer.cs" beforeDir="false" afterPath="$PROJECT_DIR$/Resources/Resource.designer.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/layout/HomePage.axml" beforeDir="false" afterPath="$PROJECT_DIR$/Resources/layout/HomePage.axml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/layout/item_user.axml" beforeDir="false" afterPath="$PROJECT_DIR$/Resources/layout/item_user.axml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-anydpi-v26/icon.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-anydpi-v26/icon_round.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-hdpi/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-hdpi/launcher_foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-mdpi/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-mdpi/launcher_foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xhdpi/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xhdpi/launcher_foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xxhdpi/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xxhdpi/launcher_foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xxxhdpi/icon.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/mipmap-xxxhdpi/launcher_foreground.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Resources/values/colors.xml" beforeDir="false" afterPath="$PROJECT_DIR$/Resources/values/colors.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/ScoreboardTracker.Android.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/ScoreboardTracker.Android.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ScoreboardTracker.Android.csproj" beforeDir="false" afterPath="$PROJECT_DIR$/ScoreboardTracker.Android.csproj" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ScoreboardTracker.Android.csproj.user" beforeDir="false" afterPath="$PROJECT_DIR$/ScoreboardTracker.Android.csproj.user" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ScoreboardTracker/Services/ScoreboardRepository.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ScoreboardTracker/Services/ScoreboardRepository.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ScoreboardTracker/ViewModels/MainViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ScoreboardTracker/ViewModels/MainViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ScoreboardTracker/ViewModels/StatisticsViewModel.cs" beforeDir="false" afterPath="$PROJECT_DIR$/../ScoreboardTracker/ViewModels/StatisticsViewModel.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../ScoreboardTracker/Views/MainPage.xaml" beforeDir="false" afterPath="$PROJECT_DIR$/../ScoreboardTracker/Views/MainPage.xaml" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="GenerateSignedApkSettings">
+    <option name="KEY_STORE_PATH" value="C:\Users\sathyajith.r\Desktop\scoreboardtracker.jks" />
+    <option name="KEY_ALIAS" value="scoreboard" />
+    <option name="BUILD_TARGET_KEY" value="apk" />
   </component>
   <component name="Git.Settings">
     <option name="ROOT_SYNC" value="DONT_SYNC" />
@@ -50,6 +33,9 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="PackagesPane" />
+      <pane id="Scope" />
+      <pane id="AndroidView" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -57,35 +43,23 @@
               <item name="ScoreboardTracker.Android" type="b2602c69:ProjectViewProjectNode" />
               <item name="ScoreboardTracker.Android" type="462c0819:PsiDirectoryNode" />
             </path>
-            <path>
-              <item name="ScoreboardTracker.Android" type="b2602c69:ProjectViewProjectNode" />
-              <item name="ScoreboardTracker.Android" type="462c0819:PsiDirectoryNode" />
-              <item name="Resources" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="ScoreboardTracker.Android" type="b2602c69:ProjectViewProjectNode" />
-              <item name="ScoreboardTracker.Android" type="462c0819:PsiDirectoryNode" />
-              <item name="Resources" type="462c0819:PsiDirectoryNode" />
-              <item name="mipmap-hdpi" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="ScoreboardTracker.Android" type="b2602c69:ProjectViewProjectNode" />
-              <item name="ScoreboardTracker.Android" type="462c0819:PsiDirectoryNode" />
-              <item name="Resources" type="462c0819:PsiDirectoryNode" />
-              <item name="mipmap-mdpi" type="462c0819:PsiDirectoryNode" />
-            </path>
           </expand>
           <select />
         </subPane>
       </pane>
-      <pane id="PackagesPane" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
+    <property name="AndroidRunProguardForReleaseBuild" value="false" />
+    <property name="ExportedApkPath" value="C:\Users\sathyajith.r\Documents\ScoreboardTracker\ScoreboardTracker\ScoreboardTracker.Android\ScoreboardTracker.Android.apk" />
+    <property name="ExportedModule" value="ScoreboardTracker.Android" />
     <property name="android.sdk.path" value="C:/AndroidSDK/AndroidSDK" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$" />
-    <property name="settings.editor.selected.configurable" value="vcs.Git" />
+    <property name="project.structure.last.edited" value="Project" />
+    <property name="project.structure.proportion" value="0.0" />
+    <property name="project.structure.side.proportion" value="0.0" />
+    <property name="settings.editor.selected.configurable" value="flutter.settings" />
+    <property name="show.migrate.to.gradle.popup" value="false" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -115,21 +89,105 @@
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1616" height="876" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" visible="true" weight="0.32953104" />
-      <window_info id="Structure" side_tool="true" />
-      <window_info id="Image Layers" />
-      <window_info id="Designer" />
-      <window_info id="Resources Explorer" />
-      <window_info id="Capture Tool" />
-      <window_info id="Favorites" side_tool="true" />
-      <window_info id="Captures" order="0" weight="0.25" />
-      <window_info anchor="bottom" id="Version Control" />
-      <window_info anchor="bottom" id="TODO" />
-      <window_info anchor="bottom" id="Terminal" />
-      <window_info anchor="bottom" id="Event Log" side_tool="true" />
-      <window_info anchor="right" id="Capture Analysis" />
-      <window_info anchor="right" id="Theme Preview" />
-      <window_info anchor="right" id="Palette&#9;" />
+      <window_info id="Captures" order="0" side_tool="true" weight="0.25" />
+      <window_info active="true" content_ui="combo" id="Project" order="1" visible="true" weight="0.33419022" />
+      <window_info id="Structure" order="2" side_tool="true" />
+      <window_info id="Image Layers" order="3" />
+      <window_info id="Designer" order="4" />
+      <window_info id="Resources Explorer" order="5" />
+      <window_info id="Capture Tool" order="6" />
+      <window_info id="Favorites" order="7" side_tool="true" />
+      <window_info id="Build Variants" order="8" side_tool="true" />
+      <window_info anchor="bottom" id="Run" />
+      <window_info anchor="bottom" id="Debug" />
+      <window_info anchor="bottom" id="Flutter Performance" side_tool="true" />
+      <window_info anchor="bottom" id="Version Control" order="0" />
+      <window_info anchor="bottom" id="TODO" order="1" />
+      <window_info anchor="bottom" id="Terminal" order="2" />
+      <window_info anchor="bottom" id="Event Log" order="3" side_tool="true" />
+      <window_info anchor="bottom" id="Logcat" order="4" />
+      <window_info anchor="bottom" id="Android Profiler" order="5" show_stripe_button="false" />
+      <window_info anchor="right" id="Flutter Inspector" />
+      <window_info anchor="right" id="Flutter Outline" />
+      <window_info anchor="right" id="Capture Analysis" order="0" />
+      <window_info anchor="right" id="Theme Preview" order="1" />
+      <window_info anchor="right" id="Palette&#9;" order="2" />
+      <window_info anchor="right" id="Device File Explorer" order="3" side_tool="true" />
     </layout>
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ArtifactsStructureConfigurable.UI">
+        <settings>
+          <artifact-editor />
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="FacetStructureConfigurable.UI">
+        <settings>
+          <last-edited>Android</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="GlobalLibrariesConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="JdkListConfigurable.UI">
+        <settings>
+          <last-edited>1.8</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ModuleStructureConfigurable.UI">
+        <settings>
+          <last-edited>ScoreboardTracker.Android</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+                <option value="0.6" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectLibrariesConfigurable.UI">
+        <settings>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
   </component>
 </project>
