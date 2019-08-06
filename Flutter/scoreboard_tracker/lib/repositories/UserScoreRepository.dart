@@ -1,45 +1,73 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
-import 'package:scoreboard_tracker/interfaces/IGameListener.dart';
-import 'package:scoreboard_tracker/interfaces/IListener.dart';
 import 'package:scoreboard_tracker/models/Game.dart';
 import 'package:scoreboard_tracker/models/User.dart';
 
 class UserScoreRepository {
-  void getUsers(IListener listener) {
-    Firestore.instance.collection('users').getDocuments().then((onValue) {
-      List<User> users = new List();
-      onValue.documents.forEach((d) => {
-            users.add(new User(
-                d.data["userId"], d.data["name"], d.data["profileUrl"]))
-          });
-      listener.onSuccess(users);
-    }).catchError((onError) {
-      debugPrint(onError.toString());
+  Future<List<User>> getUsers() async {
+    var userDoc = await Firestore.instance.collection('users').getDocuments();
+    List<User> users = new List();
+    userDoc.documents?.forEach((d) {
+      var data = d.data;
+      users.add(new User(data["userId"], data["name"], data["profileUrl"]));
+    });
+    return users;
+  }
+
+  Future<String> getGroupId() async {
+    var groupDoc =
+        await Firestore.instance.collection('groups').limit(1).getDocuments();
+    return groupDoc.documents.length > 0
+        ? groupDoc.documents.first.documentID
+        : null;
+  }
+
+  Future<Game> getCurrentOnGoingGame(String groupId) async {
+    var gameDoc = await Firestore.instance
+        .collection('groups/$groupId/games')
+        .where("isCompleted", isEqualTo: false)
+        .limit(1)
+        .getDocuments();
+
+    var onGoingGameData = gameDoc.documents.first;
+    var data = onGoingGameData.data;
+    return new Game(onGoingGameData.documentID, data["isCompleted"],
+        data["scoresJson"], data["winnerId"], data["looserId"]);
+  }
+
+  Future<List<Game>> getAllCompletedGames(String groupId) async {
+    var gameDoc = await Firestore.instance
+        .collection('groups/$groupId/games')
+        .where("isCompleted", isEqualTo: true)
+        .getDocuments();
+
+    var games = new List<Game>();
+
+    gameDoc.documents.forEach((g) {
+      var data = g.data;
+      games.add(new Game(g.documentID, data["isCompleted"], data["scoresJson"],
+          data["winnerId"], data["looserId"]));
+    });
+    return games;
+  }
+
+  Future<void> updateScore(String groupId, Game onGoingGame) async {
+    final DocumentReference postRef = Firestore.instance
+        .document('groups/$groupId/games/${onGoingGame.gameId}');
+
+    Firestore.instance.runTransaction((Transaction tx) async {
+      DocumentSnapshot postSnapshot = await tx.get(postRef);
+      if (postSnapshot.exists) {
+        await tx.update(postRef, onGoingGame.toJson());
+      }
     });
   }
 
-  void getCurrentOnGoingGame(IGameListener listener) {
-    Future<QuerySnapshot> postRef =
-        Firestore.instance.collection('groups').getDocuments();
+  Future<void> addNewGame(String groupId, Game onGoingGame) async {
+    final CollectionReference postRef =
+        Firestore.instance.document('groups/$groupId').collection("games");
 
-    postRef.then((onValue) {
-      String documentId = onValue.documents.first.documentID;
-      Firestore.instance
-          .collection('groups/$documentId/games')
-          .where("isCompleted", isEqualTo: false)
-          .getDocuments()
-          .then((gamesValue) {
-        var onGoingGameDoc = gamesValue.documents.first;
-        var onGoingGame = new Game(
-            onGoingGameDoc.documentID,
-            onGoingGameDoc.data["isCompleted"],
-            onGoingGameDoc.data["scoresJson"],
-            onGoingGameDoc.data["winnerId"],
-            onGoingGameDoc.data["looserId"]);
-
-        listener.onGameSuccess(onGoingGame);
-      });
+    Firestore.instance.runTransaction((Transaction tx) async {
+      await tx.set(postRef.document(), onGoingGame.toJson());
     });
   }
 }

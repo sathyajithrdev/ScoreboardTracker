@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'User.dart';
 import 'UserScore.dart';
 
 class Game {
@@ -18,6 +19,27 @@ class Game {
   Game(this.gameId, this.isCompleted, this.scoresJson, this.winnerId,
       this.looserId) {
     userScores = parseUserScore(scoresJson);
+  }
+
+  Game.newGame(List<User> users) {
+    this.isCompleted = false;
+    this.userScores = new List();
+    users.forEach((u) {
+      List<int> scores = [null, null, null, null, null, null, null];
+      this.userScores.add(new UserScore(u.userId, scores));
+    });
+  }
+
+  Map<String, dynamic> toJson() {
+    List jsonList = List();
+    userScores.map((item) => jsonList.add(item.toJson())).toList();
+
+    return {
+      'isCompleted': isCompleted,
+      'scoresJson': jsonList.toString(),
+      'winnerId': winnerId,
+      'looserId': looserId
+    };
   }
 
   List<UserScore> parseUserScore(String userScoreString) {

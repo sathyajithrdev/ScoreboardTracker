@@ -1,3 +1,4 @@
+import 'package:fancy_bottom_navigation/fancy_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:scoreboard_tracker/views/HomePage.dart';
 
@@ -43,21 +44,17 @@ class _MainState extends State<MainPage> {
         title: Text('Scoreboard Tracker'),
       ),
       body: _pages[_currentTabIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentTabIndex,
-        onTap: onTabTapped,
-        items: [
-          BottomNavigationBarItem(
-            icon: new Icon(Icons.home),
-            title: new Text('Home'),
-          ),
-          BottomNavigationBarItem(
-            icon: new Icon(Icons.book),
-            title: new Text('Statistics'),
-          ),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.history), title: Text('History'))
+      bottomNavigationBar: FancyBottomNavigation(
+        tabs: [
+          TabData(iconData: Icons.home, title: "Home"),
+          TabData(iconData: Icons.book, title: "Statistics"),
+          TabData(iconData: Icons.history, title: "History")
         ],
+        onTabChangedListener: (position) {
+          setState(() {
+            _currentTabIndex = position;
+          });
+        },
       ),
     );
   }
