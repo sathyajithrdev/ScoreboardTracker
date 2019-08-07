@@ -1,10 +1,15 @@
+import 'package:circular_reveal_animation/circular_reveal_animation.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_lottie/flutter_lottie.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:scoreboard_tracker/interfaces/IListener.dart';
 
 import 'package:scoreboard_tracker/models/Game.dart';
 import 'package:scoreboard_tracker/models/User.dart';
 import 'package:scoreboard_tracker/models/UserScore.dart';
+import 'package:scoreboard_tracker/models/UserTotalScore.dart';
 import 'package:scoreboard_tracker/repositories/UserScoreRepository.dart';
 import 'package:scoreboard_tracker/utils/ObjectUtil.dart';
 
@@ -17,14 +22,22 @@ class HomePage extends StatefulWidget {
   _HomePageState createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with SingleTickerProviderStateMixin
+    implements IListener {
+  AnimationController animationController;
+  Animation<double> animation;
+
   String _groupId;
   List<User> _users = new List();
   Game _onGoingGame;
 
   //Loading indicator properties
   bool _isLoading = true;
+  bool _initialLoading = true;
   String _loadingMessage = "";
+
+  String _lastSetWinningMessage = "";
 
   UserScoreRepository _userRepository;
 
@@ -35,6 +48,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    animationController = AnimationController(
+      vsync: this,
+      duration: Duration(milliseconds: 1000),
+    );
+    animation = CurvedAnimation(
+      parent: animationController,
+      curve: Curves.easeIn,
+    );
     populateUserScores();
   }
 
@@ -52,7 +73,61 @@ class _HomePageState extends State<HomePage> {
     await populateUserDetails();
     await populateOnGoingGame();
     await populateUserWinAndLossDetails();
+    listenForGameScoreChanges();
     hideLoading();
+  }
+
+  void listenForGameScoreChanges() {
+    Firestore.instance
+        .collection('groups/$_groupId/games')
+        .where("isCompleted", isEqualTo: false)
+        .limit(1)
+        .snapshots()
+        .listen((onData) {
+      if (!_initialLoading) {
+        if (onData.documentChanges != null &&
+            onData.documentChanges.length > 0) {
+          if (isDocumentAdded(onData)) {
+            onNewGameCreated();
+          } else if (isDocumentModified(onData)) {
+            var data = onData.documentChanges[0].document.data;
+            Game gameData = new Game(
+                onData.documentChanges[0].document.documentID,
+                data["isCompleted"],
+                data["scoresJson"],
+                data["winnerId"],
+                data["looserId"],
+                data["timeStamp"]);
+//            var dataCompared = gameData.timestamp.compareTo(_onGoingGame.timestamp);
+//            var currentTime = _onGoingGame.timestamp;
+//            var serverTime = gameData.timestamp;
+            if (gameData.timestamp.compareTo(_onGoingGame.timestamp) > 0) {
+              onDataChanged();
+              populateOnGoingGame();
+            }
+          }
+        }
+      }
+      _initialLoading = false;
+    });
+  }
+
+  bool isDocumentModified(QuerySnapshot onData) {
+    return onData.documentChanges
+        .any((d) => d.type == DocumentChangeType.modified);
+  }
+
+  bool isDocumentAdded(QuerySnapshot onData) {
+    return onData.documentChanges
+        .any((d) => d.type == DocumentChangeType.added);
+  }
+
+  Future<void> onNewGameCreated() async {
+    setState(() {
+      _lastSetWinningMessage = "";
+    });
+    await populateOnGoingGame();
+    await populateUserWinAndLossDetails();
   }
 
   Future populateUserDetails() async {
@@ -195,6 +270,21 @@ class _HomePageState extends State<HomePage> {
                 return getUserCard(_onGoingGame.userScores[index]);
               },
             )),
+            if (_lastSetWinningMessage != '')
+              SizedBox(
+                width: double.infinity,
+                child: Padding(
+                  padding: EdgeInsets.all(6),
+                  child: Text(
+                    _lastSetWinningMessage,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                        color: Colors.green,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
             SizedBox(
               width: double.infinity,
               child: RaisedButton(
@@ -210,12 +300,14 @@ class _HomePageState extends State<HomePage> {
         ));
   }
 
-  void onFinishButtonPress() {
-    showLoading("SavingData");
-    if (_validateGameScore()) {
-      updateGameResult();
-    }
-    hideLoading();
+  void onFinishButtonPress() async {
+//    showLoading("SavingData");
+//    if (_validateGameScore()) {
+//      updateGameResult();
+//    }
+//    hideLoading();
+
+    showRevealDialog(context, _onGoingGame.userScores[0]);
   }
 
   Future<void> updateGameResult() async {
@@ -255,8 +347,7 @@ class _HomePageState extends State<HomePage> {
     var newGame = new Game.newGame(_users);
     debugPrint("new game json is: " + newGame.toJson().toString());
     await _userRepository.addNewGame(_groupId, newGame);
-    await populateOnGoingGame();
-    await populateUserWinAndLossDetails();
+    await onNewGameCreated();
   }
 
   Card getUserCard(UserScore user) {
@@ -387,8 +478,35 @@ class _HomePageState extends State<HomePage> {
       userScore.scores[index] =
           ObjectUtil.isNullOrEmpty(text) ? null : int.parse(text);
     });
-
+    calculateLastSetWinStat();
     updateUserScore();
+  }
+
+  void calculateLastSetWinStat() async {
+    if (!_onGoingGame.userScores
+        .any((us) => us.scores.where((s) => s != null).length != 6)) {
+      List<UserTotalScore> totalScores = new List();
+      _onGoingGame.userScores.forEach((g) {
+        var totalScore = 0;
+        g.scores.forEach((s) {
+          if (s != null) {
+            totalScore += s;
+          }
+        });
+        totalScores.add(new UserTotalScore(g.user.userName, totalScore));
+      });
+
+      totalScores.sort((curr, next) => curr.totalScore - next.totalScore);
+
+      setState(() {
+        _lastSetWinningMessage =
+            "${totalScores[0].userName} will stand against ${totalScores[1].userName} at ${((totalScores[1].totalScore - 1 - totalScores[0].totalScore) / 2).floor()}";
+      });
+    } else {
+      setState(() {
+        _lastSetWinningMessage = "";
+      });
+    }
   }
 
   void updateUserScore() async {
@@ -423,5 +541,63 @@ class _HomePageState extends State<HomePage> {
         timeInSecForIos: 1,
         textColor: Colors.red,
         fontSize: 16.0);
+  }
+
+  @override
+  void onDataChanged() {
+    _showToast("Score changed");
+    populateOnGoingGame();
+  }
+
+  @override
+  void onError() {}
+
+  Future<void> showRevealDialog(
+      BuildContext context, UserScore userScore) async {
+    var result = showGeneralDialog(
+      barrierLabel: "Label",
+      barrierDismissible: false,
+      barrierColor: Colors.black.withOpacity(0.5),
+      transitionDuration: Duration(milliseconds: 700),
+      context: context,
+      pageBuilder: (context, anim1, anim2) {
+        return Center(
+          child: Stack(children: <Widget>[
+            Image.network(
+              "https://photogallery.indiatimes.com/photo/64290957.cms",
+              width: 400,
+              height: 350,
+            ),
+            LottieView.fromFile(
+              filePath: "assets/images/won_anim.json",
+              autoPlay: true,
+              loop: true,
+              reverse: true,
+              onViewCreated: onViewCreated,
+            )
+          ]),
+//          margin: EdgeInsets.only(top: 50, left: 12, right: 12, bottom: 50),
+//          decoration: BoxDecoration(
+//            color: Colors.white,
+//            borderRadius: BorderRadius.circular(40),
+//          ),
+        );
+      },
+      transitionBuilder: (context, anim1, anim2, child) {
+        return CircularRevealAnimation(child: child, animation: anim1);
+      },
+    );
+
+    Future.delayed(const Duration(milliseconds: 4000), () {
+      Navigator.of(context, rootNavigator: true).pop('dialog');
+    });
+  }
+
+  void onViewCreated(LottieController controller) {
+
+    // Listen for when the playback completes
+    controller.onPlayFinished.listen((bool animationFinished) {
+      print("Playback complete. Was Animation Finished? " + animationFinished.toString());
+    });
   }
 }

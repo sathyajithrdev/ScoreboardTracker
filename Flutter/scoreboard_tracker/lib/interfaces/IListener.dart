@@ -1,6 +1,5 @@
-import 'package:scoreboard_tracker/models/User.dart';
 
 abstract class IListener{
-  void onSuccess(List<User> data);
-  void onError(List<User> data);
+  void onDataChanged();
+  void onError();
 }

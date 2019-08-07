@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'User.dart';
 import 'UserScore.dart';
@@ -14,10 +15,12 @@ class Game {
 
   String looserId;
 
+  Timestamp timestamp;
+
   List<UserScore> userScores;
 
   Game(this.gameId, this.isCompleted, this.scoresJson, this.winnerId,
-      this.looserId) {
+      this.looserId, this.timestamp) {
     userScores = parseUserScore(scoresJson);
   }
 
@@ -38,7 +41,8 @@ class Game {
       'isCompleted': isCompleted,
       'scoresJson': jsonList.toString(),
       'winnerId': winnerId,
-      'looserId': looserId
+      'looserId': looserId,
+      'timeStamp': timestamp
     };
   }
 
