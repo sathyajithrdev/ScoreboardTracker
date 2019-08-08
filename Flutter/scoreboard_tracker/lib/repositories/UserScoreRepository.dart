@@ -79,19 +79,4 @@ class UserScoreRepository {
       await tx.set(postRef.document(), onGoingGame.toJson());
     });
   }
-
-  void listenForScoreChanges(
-      String groupId, String gameId, IListener listener) async {
-    Firestore.instance
-        .collection('groups/$groupId/games')
-        .where("isCompleted", isEqualTo: false)
-        .limit(1)
-        .snapshots()
-        .listen((onData) {
-      listener.onDataChanged();
-      onData.documentChanges.forEach((d) {
-        var data = d;
-      });
-    });
-  }
 }

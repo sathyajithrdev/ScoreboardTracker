@@ -1,9 +1,11 @@
+import 'dart:convert';
+
 import 'package:circular_reveal_animation/circular_reveal_animation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_lottie/flutter_lottie.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:lottie_flutter/lottie_flutter.dart';
 import 'package:scoreboard_tracker/interfaces/IListener.dart';
 
 import 'package:scoreboard_tracker/models/Game.dart';
@@ -23,7 +25,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin
+    with TickerProviderStateMixin
     implements IListener {
   AnimationController animationController;
   Animation<double> animation;
@@ -40,6 +42,8 @@ class _HomePageState extends State<HomePage>
   String _lastSetWinningMessage = "";
 
   UserScoreRepository _userRepository;
+  AnimationController _controller;
+  LottieComposition _composition;
 
   _HomePageState() {
     _userRepository = new UserScoreRepository();
@@ -301,13 +305,12 @@ class _HomePageState extends State<HomePage>
   }
 
   void onFinishButtonPress() async {
-//    showLoading("SavingData");
-//    if (_validateGameScore()) {
-//      updateGameResult();
-//    }
-//    hideLoading();
-
-    showRevealDialog(context, _onGoingGame.userScores[0]);
+    showLoading("SavingData");
+    if (_validateGameScore()) {
+      updateGameResult();
+      await showWinnerAnimation(context, _onGoingGame.userScores[0]);
+    }
+    hideLoading();
   }
 
   Future<void> updateGameResult() async {
@@ -552,9 +555,11 @@ class _HomePageState extends State<HomePage>
   @override
   void onError() {}
 
-  Future<void> showRevealDialog(
+  Future<void> showWinnerAnimation(
       BuildContext context, UserScore userScore) async {
-    var result = showGeneralDialog(
+    await _prepareLottieAnimation();
+    _controller.repeat();
+    showGeneralDialog(
       barrierLabel: "Label",
       barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.5),
@@ -562,25 +567,21 @@ class _HomePageState extends State<HomePage>
       context: context,
       pageBuilder: (context, anim1, anim2) {
         return Center(
-          child: Stack(children: <Widget>[
-            Image.network(
-              "https://photogallery.indiatimes.com/photo/64290957.cms",
-              width: 400,
-              height: 350,
-            ),
-            LottieView.fromFile(
-              filePath: "assets/images/won_anim.json",
-              autoPlay: true,
-              loop: true,
-              reverse: true,
-              onViewCreated: onViewCreated,
-            )
-          ]),
-//          margin: EdgeInsets.only(top: 50, left: 12, right: 12, bottom: 50),
-//          decoration: BoxDecoration(
-//            color: Colors.white,
-//            borderRadius: BorderRadius.circular(40),
-//          ),
+          child: Stack(
+              alignment: AlignmentDirectional.bottomCenter,
+              children: <Widget>[
+                Image.network(
+                  userScore.user.profileUrl,
+                  fit: BoxFit.cover,
+                  width: 300,
+                  height: 350,
+                ),
+                new Lottie(
+                  composition: _composition,
+                  size: const Size(200.0, 200.0),
+                  controller: _controller,
+                ),
+              ]),
         );
       },
       transitionBuilder: (context, anim1, anim2, child) {
@@ -589,15 +590,32 @@ class _HomePageState extends State<HomePage>
     );
 
     Future.delayed(const Duration(milliseconds: 4000), () {
+      setState(() {
+        _controller.stop();
+      });
       Navigator.of(context, rootNavigator: true).pop('dialog');
     });
   }
 
-  void onViewCreated(LottieController controller) {
+  Future<void> _prepareLottieAnimation() async {
+    _controller = new AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    );
 
-    // Listen for when the playback completes
-    controller.onPlayFinished.listen((bool animationFinished) {
-      print("Playback complete. Was Animation Finished? " + animationFinished.toString());
+    await loadAsset("assets/images/won_anim.json")
+        .then((LottieComposition composition) {
+      setState(() {
+        _composition = composition;
+        _controller.reset();
+      });
     });
+  }
+
+  Future<LottieComposition> loadAsset(String assetName) async {
+    return await rootBundle
+        .loadString(assetName)
+        .then<Map<String, dynamic>>((String data) => json.decode(data))
+        .then((Map<String, dynamic> map) => new LottieComposition.fromMap(map));
   }
 }
