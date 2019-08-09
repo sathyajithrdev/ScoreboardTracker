@@ -1,5 +1,4 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:scoreboard_tracker/interfaces/IListener.dart';
 import 'package:scoreboard_tracker/models/Game.dart';
 import 'package:scoreboard_tracker/models/User.dart';
 

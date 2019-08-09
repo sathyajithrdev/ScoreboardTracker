@@ -308,14 +308,13 @@ class _HomePageState extends State<HomePage>
     showLoading("SavingData");
     if (_validateGameScore()) {
       updateGameResult();
-      await showWinnerAnimation(context, _onGoingGame.userScores[0]);
     }
     hideLoading();
   }
 
   Future<void> updateGameResult() async {
-    String winnerUserId;
-    String looserUserId;
+    UserScore winnerUser;
+    UserScore looserUser;
     int minScore;
     int maxScore;
 
@@ -323,17 +322,17 @@ class _HomePageState extends State<HomePage>
       var totalScore = g.scores.reduce((a, b) => a + b);
 
       if (minScore == null || minScore >= totalScore) {
-        winnerUserId = g.userId;
+        winnerUser = g;
         minScore = totalScore;
       }
       if (maxScore == null || maxScore <= totalScore) {
-        looserUserId = g.userId;
+        looserUser = g;
         maxScore = totalScore;
       }
     });
 
-    _onGoingGame.winnerId = winnerUserId;
-    _onGoingGame.looserId = looserUserId;
+    _onGoingGame.winnerId = winnerUser.userId;
+    _onGoingGame.looserId = looserUser.userId;
 
     if (_onGoingGame.winnerId == null || _onGoingGame.winnerId.trim() == "") {
       _showToast("Unable to calculate winner");
@@ -346,7 +345,9 @@ class _HomePageState extends State<HomePage>
     }
 
     _onGoingGame.isCompleted = true;
+    showWinnerAnimation(context, winnerUser);
     await _userRepository.updateScore(_groupId, _onGoingGame);
+    _showToast("${looserUser.user.userName} lost the match :(");
     var newGame = new Game.newGame(_users);
     debugPrint("new game json is: " + newGame.toJson().toString());
     await _userRepository.addNewGame(_groupId, newGame);
@@ -388,7 +389,7 @@ class _HomePageState extends State<HomePage>
       alignment: AlignmentDirectional.bottomStart,
       children: <Widget>[
         Image.network(
-          "https://photogallery.indiatimes.com/photo/64290957.cms",
+          user.user.profileUrl,
           width: 150,
           height: 250,
           fit: BoxFit.cover,
