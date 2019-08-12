@@ -15,6 +15,9 @@ import 'package:scoreboard_tracker/models/UserTotalScore.dart';
 import 'package:scoreboard_tracker/repositories/UserScoreRepository.dart';
 import 'package:scoreboard_tracker/utils/ObjectUtil.dart';
 
+import 'LoadingView.dart';
+import 'UserProfilePage.dart';
+
 class HomePage extends StatefulWidget {
   final Color color;
 
@@ -29,6 +32,7 @@ class _HomePageState extends State<HomePage>
     implements IListener {
   AnimationController animationController;
   Animation<double> animation;
+  final GlobalKey<LoadingViewState> _key = GlobalKey();
 
   String _groupId;
   List<User> _users = new List();
@@ -107,7 +111,6 @@ class _HomePageState extends State<HomePage>
 //            var serverTime = gameData.timestamp;
             if (gameData.timestamp.compareTo(_onGoingGame.timestamp) > 0) {
               onDataChanged();
-              populateOnGoingGame();
             }
           }
         }
@@ -388,12 +391,17 @@ class _HomePageState extends State<HomePage>
     return new Stack(
       alignment: AlignmentDirectional.bottomStart,
       children: <Widget>[
-        Image.network(
-          user.user.profileUrl,
-          width: 150,
-          height: 250,
-          fit: BoxFit.cover,
-        ),
+        Hero(
+            tag: 'profileImage${user.userId}',
+            child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: () => navigateToProfilePage(user),
+                child: Image.network(
+                  user.user.profileUrl,
+                  width: 150,
+                  height: 250,
+                  fit: BoxFit.cover,
+                ))),
         Container(
           color: Color.fromARGB(160, 10, 10, 10),
           width: 150,
@@ -401,13 +409,15 @@ class _HomePageState extends State<HomePage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: <Widget>[
               Padding(
-                child: Text(
-                  user.user.userName,
-                  style: TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18),
-                ),
+                child: Hero(
+                    tag: 'userName${user.userId}',
+                    child: Text(
+                      user.user.userName,
+                      style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18),
+                    )),
                 padding: EdgeInsets.all(6),
               ),
               Padding(
@@ -596,6 +606,11 @@ class _HomePageState extends State<HomePage>
       });
       Navigator.of(context, rootNavigator: true).pop('dialog');
     });
+  }
+
+  void navigateToProfilePage(UserScore user) {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => UserProfilePage(user)));
   }
 
   Future<void> _prepareLottieAnimation() async {

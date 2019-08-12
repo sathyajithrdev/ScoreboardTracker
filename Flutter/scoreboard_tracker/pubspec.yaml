@@ -32,6 +32,8 @@ dependencies:
   #TOAST
   fluttertoast: ^2.2.11
   lottie_flutter: ^0.2.0
+  flutter_swiper: ^1.1.6
+  charts_flutter: ^0.6.0
 
   #Circular reveal animation
   circular_reveal_animation: ^1.0.6

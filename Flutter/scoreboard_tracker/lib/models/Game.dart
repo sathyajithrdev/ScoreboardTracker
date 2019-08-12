@@ -46,6 +46,20 @@ class Game {
     };
   }
 
+  Map<String, dynamic> toJsonDummy() {
+    List jsonList = List();
+    userScores.map((item) => jsonList.add(item.toJson())).toList();
+
+    return {
+      'isCompleted': isCompleted,
+      'scoresJson': jsonList.toString(),
+      'winnerId': winnerId,
+      'looserId': looserId,
+      'timeStamp': timestamp,
+      'isDummy': true
+    };
+  }
+
   List<UserScore> parseUserScore(String userScoreString) {
     final parsed = json.decode(userScoreString).cast<Map<String, dynamic>>();
     return parsed.map<UserScore>((json) => UserScore.fromJson(json)).toList();

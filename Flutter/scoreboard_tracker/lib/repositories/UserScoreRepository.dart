@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:scoreboard_tracker/models/Game.dart';
 import 'package:scoreboard_tracker/models/User.dart';
@@ -54,6 +56,71 @@ class UserScoreRepository {
     });
     return games;
   }
+
+  Future<List<Game>> getAllCompletedGamesWithoutDummy(String groupId) async {
+    var gameDoc = await Firestore.instance
+        .collection('groups/$groupId/games')
+        .where("isCompleted", isEqualTo: true)
+        .getDocuments();
+
+    var games = new List<Game>();
+
+    gameDoc.documents.forEach((g) {
+      var data = g.data;
+      if (data["isDummy"] != true) {
+        games.add(new Game(
+            g.documentID,
+            data["isCompleted"],
+            data["scoresJson"],
+            data["winnerId"],
+            data["looserId"],
+            data["timeStamp"]));
+      }
+    });
+    return games;
+  }
+
+//  Future<void> migratedDataUpdate() async {
+//    var gameDoc = await Firestore.instance
+//        .collection('groups/VVmSk2oLEPAdPu9agt9T/games')
+//        .where("isCompleted", isEqualTo: true)
+//        .getDocuments();
+//
+//    var games = new List<Game>();
+//
+//    gameDoc.documents.forEach((g) {
+//      var data = g.data;
+//      games.add(new Game(g.documentID, data["isCompleted"], data["scoresJson"],
+//          data["winnerId"], data["looserId"], data["timeStamp"]));
+//    });
+//
+//    var gamesToUpdate = new List<Game>();
+//    games.forEach((g) {
+//      if (g.userScores.any(isDummyData)) {
+//        gamesToUpdate.add(g);
+//      }
+//    });
+//
+//    gamesToUpdate.forEach((game) {
+//      new Timer(const Duration(seconds: 5), () async {
+//        await updateDummydata(game);
+//      });
+//    });
+//  }
+//
+//  Future<void> updateDummydata(Game game) async {
+//    game.timestamp = Timestamp.fromDate(new DateTime(2000));
+//    final DocumentReference postRef = Firestore.instance
+//        .document('groups/VVmSk2oLEPAdPu9agt9T/games/${game.gameId}');
+//
+//    await postRef.setData(game.toJsonDummy());
+//  }
+//
+//  bool isDummyData(us) {
+//    int totalScore = 0;
+//    us.scores.forEach((s) => totalScore += s);
+//    return totalScore == 800;
+//  }
 
   Future<void> updateScore(String groupId, Game onGoingGame) async {
     onGoingGame.timestamp = Timestamp.now();

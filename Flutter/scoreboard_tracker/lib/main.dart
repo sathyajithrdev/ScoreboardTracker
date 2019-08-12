@@ -40,9 +40,9 @@ class _MainState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Scoreboard Tracker'),
-      ),
+//      appBar: AppBar(
+//        title: Text('Scoreboard Tracker'),
+//      ),
       body: _pages[_currentTabIndex],
       bottomNavigationBar: FancyBottomNavigation(
         tabs: [
