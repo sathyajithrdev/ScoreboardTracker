@@ -349,12 +349,20 @@ class _HomePageState extends State<HomePage>
 
     _onGoingGame.isCompleted = true;
     showWinnerAnimation(context, winnerUser);
-    await _userRepository.updateScore(_groupId, _onGoingGame);
-    _showToast("${looserUser.user.userName} lost the match :(");
-    var newGame = new Game.newGame(_users);
-    debugPrint("new game json is: " + newGame.toJson().toString());
-    await _userRepository.addNewGame(_groupId, newGame);
-    await onNewGameCreated();
+    await _userRepository
+        .updateScore(_groupId, _onGoingGame)
+        .then((onValue) async {
+      Future.delayed(const Duration(milliseconds: 4000), () {
+        _showToast("${looserUser.user.userName} lost the match :(");
+      });
+
+      var newGame = new Game.newGame(_users);
+      debugPrint("new game json is: " + newGame.toJson().toString());
+      await _userRepository.addNewGame(_groupId, newGame);
+      await onNewGameCreated();
+    }).catchError((onError) {
+      _showSnackbar("Unable to update scores, please check your internet");
+    });
   }
 
   Card getUserCard(UserScore user) {
@@ -493,6 +501,7 @@ class _HomePageState extends State<HomePage>
           ObjectUtil.isNullOrEmpty(text) ? null : int.parse(text);
     });
     calculateLastSetWinStat();
+
     updateUserScore();
   }
 
@@ -524,7 +533,13 @@ class _HomePageState extends State<HomePage>
   }
 
   void updateUserScore() async {
-    await _userRepository.updateScore(_groupId, _onGoingGame);
+    await _userRepository
+        .updateScore(_groupId, _onGoingGame)
+        .then((onValue) => Scaffold.of(context).hideCurrentSnackBar())
+        .catchError((onError) {
+      _showSnackbar(
+          "Unable to update score, pls check your intenet connectivity");
+    });
   }
 
   String getTotalScore(UserScore userScore) {
@@ -557,9 +572,23 @@ class _HomePageState extends State<HomePage>
         fontSize: 16.0);
   }
 
+  void _showSnackbar(String message) {
+    final snackBar = SnackBar(
+      content: Text(message),
+      duration: Duration(minutes: 30),
+      action: SnackBarAction(
+        label: 'OK',
+        onPressed: () {
+          // Some code to undo the change.
+        },
+      ),
+    );
+    Scaffold.of(context).showSnackBar(snackBar);
+  }
+
   @override
   void onDataChanged() {
-    _showToast("Score changed");
+//    _showToast("Score changed");
     populateOnGoingGame();
   }
 

@@ -124,15 +124,10 @@ class UserScoreRepository {
 
   Future<void> updateScore(String groupId, Game onGoingGame) async {
     onGoingGame.timestamp = Timestamp.now();
-    final DocumentReference postRef = Firestore.instance
-        .document('groups/$groupId/games/${onGoingGame.gameId}');
-
-    Firestore.instance.runTransaction((Transaction tx) async {
-      DocumentSnapshot postSnapshot = await tx.get(postRef);
-      if (postSnapshot.exists) {
-        await tx.update(postRef, onGoingGame.toJson());
-      }
-    });
+    await Firestore.instance
+        .document('groups/$groupId/games/${onGoingGame.gameId}')
+        .updateData(onGoingGame.toJson())
+        .timeout(new Duration(seconds: 6));
   }
 
   Future<void> addNewGame(String groupId, Game onGoingGame) async {

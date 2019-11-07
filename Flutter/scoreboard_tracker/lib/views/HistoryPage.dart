@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:scoreboard_tracker/models/Game.dart';
 import 'package:scoreboard_tracker/models/User.dart';
@@ -39,8 +40,18 @@ class _HistoryPageState extends State<HistoryPage> {
     _groupId = await _userScoreRepository.getGroupId();
     _games =
         await _userScoreRepository.getAllCompletedGamesWithoutDummy(_groupId);
+
+    _games.forEach((f) {
+      if (f.timestamp == null) {
+        f.timestamp = Timestamp.fromDate(new DateTime(2000, 1, 1));
+      }
+    });
+
+    _games.sort((curr, next) {
+      return (next.timestamp.compareTo(curr.timestamp));
+    });
+
     setState(() {
-      _games = _games;
       _isLoading = false;
       _listKey = Key(Random.secure().toString());
     });
@@ -93,7 +104,7 @@ class _HistoryPageState extends State<HistoryPage> {
               top: 32,
             ),
             child: Text(
-              "Loading statistics",
+              "Loading game details...",
               style:
                   TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
