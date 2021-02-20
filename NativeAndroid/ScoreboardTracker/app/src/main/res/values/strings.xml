@@ -1,0 +1,6 @@
+<resources>
+    <string name="app_name">Scoreboard Tracker</string>
+    <string name="game_route">Game</string>
+    <string name="stats_route">Stats</string>
+    <string name="history_route">History</string>
+</resources>
