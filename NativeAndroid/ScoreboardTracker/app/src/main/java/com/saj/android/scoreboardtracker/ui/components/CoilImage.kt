@@ -1,4 +1,4 @@
-package com.saj.android.scoreboardtracker.ui.controls
+package com.saj.android.scoreboardtracker.ui.components
 
 
 import android.graphics.Bitmap
