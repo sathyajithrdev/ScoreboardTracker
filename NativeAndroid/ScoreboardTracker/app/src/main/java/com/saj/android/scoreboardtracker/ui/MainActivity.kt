@@ -3,7 +3,7 @@ package com.saj.android.scoreboardtracker.ui
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.runtime.Providers
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
@@ -21,7 +21,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val systemUiController = remember { SystemUiController(window) }
-            Providers(LocalSysUiController provides systemUiController) {
+            CompositionLocalProvider(LocalSysUiController provides systemUiController) {
                 ScoreboardApp(viewModel, onBackPressedDispatcher)
             }
         }

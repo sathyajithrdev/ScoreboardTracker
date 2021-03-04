@@ -75,6 +75,6 @@ fun ScoreboardScaffold(
         drawerScrimColor = drawerScrimColor,
         backgroundColor = backgroundColor,
         contentColor = contentColor,
-        bodyContent = bodyContent
+        content = bodyContent
     )
 }

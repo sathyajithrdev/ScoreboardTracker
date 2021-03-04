@@ -90,7 +90,7 @@ private fun UserScoreItem(user: User) {
                 Image(
                     bitmap = img.asImageBitmap(),
                     "",
-                    modifier = Modifier.preferredSize(150.dp, 200.dp),
+                    modifier = Modifier.size(150.dp, 200.dp),
                     contentScale = ContentScale.Crop,
                 )
             }

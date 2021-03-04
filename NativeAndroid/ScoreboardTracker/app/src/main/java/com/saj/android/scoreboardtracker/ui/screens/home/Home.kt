@@ -25,12 +25,7 @@ import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.preferredHeight
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Icon
@@ -72,7 +67,6 @@ import com.saj.android.scoreboardtracker.ui.components.ScoreboardScaffold
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardSurface
 import com.saj.android.scoreboardtracker.ui.screens.MainViewModel
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
-import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import kotlinx.coroutines.launch
 
 @Composable
@@ -137,7 +131,7 @@ private fun ScoreboardBottomNav(
             itemCount = items.size,
             indicator = { ScoreboardBottomNavIndicator() },
             animSpec = springSpec,
-            modifier = Modifier.navigationBarsPadding(left = false, right = false)
+            modifier = Modifier.padding(0.dp)
         ) {
             items.forEach { section ->
                 val selected = section == currentSection
@@ -213,7 +207,7 @@ private fun ScoreboardBottomNavLayout(
     }
 
     Layout(
-        modifier = modifier.preferredHeight(BottomNavHeight),
+        modifier = modifier.height(BottomNavHeight),
         content = {
             content()
             Box(Modifier.layoutId("indicator"), content = indicator)

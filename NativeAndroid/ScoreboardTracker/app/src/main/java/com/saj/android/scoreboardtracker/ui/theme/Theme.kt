@@ -198,7 +198,7 @@ fun ProvideScoreboardColors(
 ) {
     val colorPalette = remember { colors }
     colorPalette.update(colors)
-    Providers(LocalScoreboardColors provides colorPalette, content = content)
+    CompositionLocalProvider(LocalScoreboardColors provides colorPalette, content = content)
 }
 
 private val LocalScoreboardColors = staticCompositionLocalOf<ScoreboardColors> {

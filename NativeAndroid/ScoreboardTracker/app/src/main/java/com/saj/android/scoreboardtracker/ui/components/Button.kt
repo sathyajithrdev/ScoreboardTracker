@@ -16,18 +16,9 @@
 
 package com.saj.android.scoreboardtracker.ui.components
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.InteractionState
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.indication
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.defaultMinSizeConstraints
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ButtonDefaults
 import androidx.compose.material.MaterialTheme
@@ -48,7 +39,7 @@ fun ScoreboardButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    interactionState: InteractionState = remember { InteractionState() },
+    interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     shape: Shape = ButtonShape,
     border: BorderStroke? = null,
     backgroundGradient: List<Color> = ScoreboardTheme.colors.interactivePrimary,
@@ -74,7 +65,7 @@ fun ScoreboardButton(
                 onClick = onClick,
                 enabled = enabled,
                 role = Role.Button,
-                interactionState = interactionState,
+                interactionSource = interactionSource,
                 indication = null
             )
     ) {
@@ -82,12 +73,10 @@ fun ScoreboardButton(
             value = MaterialTheme.typography.button
         ) {
             Row(
-                Modifier
-                    .defaultMinSizeConstraints(
-                        minWidth = ButtonDefaults.MinWidth,
-                        minHeight = ButtonDefaults.MinHeight
-                    )
-                    .indication(interactionState, LocalIndication.current)
+                Modifier.defaultMinSize(
+                    minWidth = ButtonDefaults.MinWidth,
+                    minHeight = ButtonDefaults.MinHeight
+                ).indication(interactionSource, LocalIndication.current)
                     .padding(contentPadding),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
