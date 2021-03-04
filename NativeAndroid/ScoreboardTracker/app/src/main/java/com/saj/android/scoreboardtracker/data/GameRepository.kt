@@ -1,7 +1,9 @@
 package com.saj.android.scoreboardtracker.data
 
 import android.util.Log
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.model.User
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -9,12 +11,13 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flowOn
+import java.util.*
 
 class GameRepository : BaseRepository() {
 
-    val tag = "GameRepo"
+    private val tag = "GameRepo"
 
-    val db = FirebaseFirestore.getInstance()
+    private val db = FirebaseFirestore.getInstance()
 
     @ExperimentalCoroutinesApi
     fun getUsersList(): Flow<List<User>> {
@@ -32,6 +35,61 @@ class GameRepository : BaseRepository() {
                                 )
                             }
                             offer(users)
+                            close()
+                        }
+                    } else {
+                        Log.w(tag, "Error getting documents.", task.exception)
+                        close()
+                    }
+                }
+            awaitClose { }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun getAllCompletedGames(groupId: String): Flow<List<Game>> {
+        return callbackFlow {
+            db.collection("groups/$groupId/games").whereEqualTo("isCompleted", true)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        task.result?.let { result ->
+                            val games = result.map { data ->
+                                Game(
+                                    data.id,
+                                    data["isCompleted"] as Boolean,
+                                    data["scoresJson"].toString(),
+                                    data["winnerId"].toString(),
+                                    data["looserId"].toString(),
+                                    data["timeStamp"] as Timestamp? ?: Timestamp(
+                                        GregorianCalendar(
+                                            2000,
+                                            1,
+                                            1
+                                        ).time
+                                    ),
+                                    arrayListOf()
+                                )
+                            }
+                            offer(games)
+                            close()
+                        }
+                    } else {
+                        Log.w(tag, "Error getting documents.", task.exception)
+                        close()
+                    }
+                }
+            awaitClose { }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun getGroupId(): Flow<String> {
+        return callbackFlow {
+            db.collection("groups").limit(1)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        task.result?.let { result ->
+                            offer(result.first().id)
                             close()
                         }
                     } else {

@@ -29,16 +29,10 @@ fun VerticalGrid(
     columns: Int = 2,
     content: @Composable () -> Unit
 ) {
-    Layout(
-        content = content,
-        modifier = modifier
-    ) { measurables, constraints ->
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
         val itemWidth = constraints.maxWidth / columns
         // Keep given height constraints, but set an exact width
-        val itemConstraints = constraints.copy(
-            minWidth = itemWidth,
-            maxWidth = itemWidth
-        )
+        val itemConstraints = constraints.copy(minWidth = itemWidth, maxWidth = itemWidth)
         // Measure each item with these constraints
         val placeables = measurables.map { it.measure(itemConstraints) }
         // Track each columns height so we can calculate the overall height

@@ -39,16 +39,16 @@ private val DarkColorPalette = ScoreboardColors(
     textHelp = Neutral1,
     textInteractive = Neutral7,
     textLink = Ocean2,
-    iconPrimary = Shadow1,
+    iconPrimary = Neutral8,
     iconSecondary = Neutral0,
-    iconInteractive = Neutral7,
-    iconInteractiveInactive = Neutral6,
+    iconInteractive = Neutral1,
+    iconInteractiveInactive = Neutral3,
     error = FunctionalRedDark,
     gradient6_1 = listOf(Shadow5, Ocean7, Shadow9, Ocean7, Shadow5),
     gradient6_2 = listOf(Rose11, Lavender7, Rose8, Lavender7, Rose11),
     gradient3_1 = listOf(Shadow9, Ocean7, Shadow5),
     gradient3_2 = listOf(Rose8, Lavender7, Rose11),
-    gradient2_1 = listOf(Ocean3, Shadow3),
+    gradient2_1 = listOf(Ocean10, Ocean9),
     gradient2_2 = listOf(Ocean7, Shadow7),
     isDark = true
 )
@@ -211,7 +211,7 @@ private val LocalScoreboardColors = staticCompositionLocalOf<ScoreboardColors> {
  */
 fun debugColors(
     darkTheme: Boolean,
-    debugColor: Color = Color.Magenta
+    debugColor: Color = Ocean11
 ) = Colors(
     primary = debugColor,
     primaryVariant = debugColor,

@@ -92,14 +92,10 @@ fun Home(homeViewModel: MainViewModel, onUserSelected: (String) -> Unit) {
                     onUserClick = onUserSelected,
                     modifier = modifier
                 )
-                HomeSections.Stats -> Game(
-                    viewModel = homeViewModel,
-                    onUserClick = onUserSelected,
+                HomeSections.Stats -> Statistics(
                     modifier = modifier
                 )
-                HomeSections.History -> Game(
-                    viewModel = homeViewModel,
-                    onUserClick = onUserSelected,
+                HomeSections.History -> History(
                     modifier = modifier
                 )
             }
@@ -121,7 +117,6 @@ private fun ScoreboardBottomNav(
     ) {
         val springSpec = remember {
             SpringSpec<Float>(
-                // Determined experimentally
                 stiffness = 800f,
                 dampingRatio = 0.8f
             )
