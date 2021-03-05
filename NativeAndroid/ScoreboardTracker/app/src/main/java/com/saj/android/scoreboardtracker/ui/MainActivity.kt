@@ -7,7 +7,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
-import com.saj.android.scoreboardtracker.ui.screens.MainViewModel
 import com.saj.android.scoreboardtracker.ui.utils.LocalSysUiController
 import com.saj.android.scoreboardtracker.ui.utils.SystemUiController
 

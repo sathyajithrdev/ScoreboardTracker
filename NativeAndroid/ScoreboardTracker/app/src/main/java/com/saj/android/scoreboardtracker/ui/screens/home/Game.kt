@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -28,9 +29,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.saj.android.scoreboardtracker.R
+import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.model.User
+import com.saj.android.scoreboardtracker.model.UserScore
 import com.saj.android.scoreboardtracker.ui.components.*
-import com.saj.android.scoreboardtracker.ui.screens.MainViewModel
+import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -75,18 +78,20 @@ fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> 
 @ExperimentalCoroutinesApi
 @Composable
 fun UsersList(viewModel: MainViewModel, modifier: Modifier) {
-    val items: List<User> by viewModel.userLiveData.observeAsState(listOf())
-    LazyColumn(modifier.padding(16.dp, 32.dp, 16.dp, 0.dp)) {
-        items(count = items.size, itemContent = { index ->
-            val user = items[index]
-            UserScoreItem(user)
-            ScoreboardDivider(thickness = 16.dp, color = Color.Transparent)
-        })
+    val game: Game? by viewModel.onGoingGameLiveData.observeAsState()
+    game?.let {
+        LazyColumn(modifier.padding(16.dp, 32.dp, 16.dp, 0.dp)) {
+            items(count = it.userScores.size, itemContent = { index ->
+                val userScore = it.userScores[index]
+                UserScoreItem(userScore)
+                ScoreboardDivider(thickness = 16.dp, color = Color.Transparent)
+            })
+        }
     }
 }
 
 @Composable
-private fun UserScoreItem(user: User) {
+private fun UserScoreItem(userScore: UserScore) {
     val focusManager = LocalFocusManager.current
     val gradientBackground = Brush.horizontalGradient(
         colors = backgroundGradient
@@ -98,7 +103,7 @@ private fun UserScoreItem(user: User) {
                 .background(gradientBackground)
         ) {
             val image = loadPicture(
-                url = user.profileImageUrl,
+                url = userScore.user.profileImageUrl,
                 defaultImage = R.drawable.common_full_open_on_phone
             ).value
             image?.let { img ->
@@ -109,9 +114,10 @@ private fun UserScoreItem(user: User) {
                     contentScale = ContentScale.Crop,
                 )
             }
+
             VerticalGrid(modifier = Modifier.padding(0.dp), 3) {
-                (0..7).forEach { i ->
-                    val textValue = remember { mutableStateOf("") }
+                userScore.scores.forEachIndexed { index, score ->
+                    val textValue = remember { mutableStateOf(score?.toString() ?: "") }
                     OutlinedTextField(
                         value = textValue.value,
                         keyboardOptions = KeyboardOptions.Default.copy(
@@ -124,12 +130,24 @@ private fun UserScoreItem(user: User) {
                         onValueChange = {
                             if (it.length <= 3) {
                                 textValue.value = it
+                                userScore.scores[index] = if (it.isEmpty()) null else it.toInt()
                             }
                         },
                     )
-
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = userScore.getTotalScore().toString(),
+                        fontSize = 18.sp,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
 }
+

@@ -16,7 +16,9 @@
 
 package com.saj.android.scoreboardtracker.ui.components
 
+import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 
@@ -41,8 +43,8 @@ fun VerticalGrid(
             val column = index % columns
             columnHeights[column] += placeable.height
         }
-        val height = (columnHeights.maxOrNull() ?: constraints.minHeight)
-            .coerceAtMost(constraints.maxHeight)
+        val height =
+            (columnHeights.maxOrNull() ?: constraints.minHeight).coerceAtMost(constraints.maxHeight)
         layout(
             width = constraints.maxWidth,
             height = height

@@ -5,7 +5,6 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import com.saj.android.scoreboardtracker.ui.screens.MainViewModel
 import com.saj.android.scoreboardtracker.ui.screens.home.Home
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
 import com.saj.android.scoreboardtracker.ui.utils.Navigator

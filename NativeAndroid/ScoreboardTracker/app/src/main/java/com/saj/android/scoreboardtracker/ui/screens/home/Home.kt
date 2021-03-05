@@ -65,7 +65,7 @@ import androidx.core.os.ConfigurationCompat
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardScaffold
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardSurface
-import com.saj.android.scoreboardtracker.ui.screens.MainViewModel
+import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
 import kotlinx.coroutines.launch
 
@@ -96,6 +96,7 @@ fun Home(homeViewModel: MainViewModel, onUserSelected: (String) -> Unit) {
                     modifier = modifier
                 )
                 HomeSections.History -> History(
+                    viewModel = homeViewModel,
                     modifier = modifier
                 )
             }

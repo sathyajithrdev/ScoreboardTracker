@@ -3,8 +3,12 @@ package com.saj.android.scoreboardtracker.data
 import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.saj.android.scoreboardtracker.extensions.deserialize
+import com.saj.android.scoreboardtracker.extensions.serialize
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.model.User
+import com.saj.android.scoreboardtracker.model.mappers.toDomain
+import com.saj.android.scoreboardtracker.model.responses.UserScoreResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
@@ -46,7 +50,45 @@ class GameRepository : BaseRepository() {
         }.flowOn(Dispatchers.IO)
     }
 
-    fun getAllCompletedGames(groupId: String): Flow<List<Game>> {
+    fun getCurrentOnGoingGame(groupId: String, users: List<User>): Flow<Game> {
+        return callbackFlow {
+            db.collection("groups/$groupId/games").whereEqualTo("isCompleted", false)
+                .limit(1)
+                .get()
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        task.result?.let { result ->
+                            result.firstOrNull()?.let { data ->
+                                val game = Game(
+                                    data.id,
+                                    data["isCompleted"] as Boolean,
+                                    data["winnerId"].toString(),
+                                    data["looserId"].toString(),
+                                    data["timeStamp"] as Timestamp? ?: Timestamp(
+                                        GregorianCalendar(
+                                            2000,
+                                            1,
+                                            1
+                                        ).time
+                                    ),
+                                    data["scoresJson"].toString()
+                                        .deserialize<List<UserScoreResponse>>()
+                                        .map { it.toDomain(users) }
+                                )
+                                offer(game)
+                                close()
+                            }
+                        }
+                    } else {
+                        Log.w(tag, "Error getting documents.", task.exception)
+                        close()
+                    }
+                }
+            awaitClose { }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun getAllCompletedGames(groupId: String, users: List<User>): Flow<List<Game>> {
         return callbackFlow {
             db.collection("groups/$groupId/games").whereEqualTo("isCompleted", true)
                 .get()
@@ -57,7 +99,6 @@ class GameRepository : BaseRepository() {
                                 Game(
                                     data.id,
                                     data["isCompleted"] as Boolean,
-                                    data["scoresJson"].toString(),
                                     data["winnerId"].toString(),
                                     data["looserId"].toString(),
                                     data["timeStamp"] as Timestamp? ?: Timestamp(
@@ -67,7 +108,9 @@ class GameRepository : BaseRepository() {
                                             1
                                         ).time
                                     ),
-                                    arrayListOf()
+                                    data["scoresJson"].toString()
+                                        .deserialize<List<UserScoreResponse>>()
+                                        .map { it.toDomain(users) }
                                 )
                             }
                             offer(games)
