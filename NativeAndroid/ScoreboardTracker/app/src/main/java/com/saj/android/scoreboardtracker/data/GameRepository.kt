@@ -54,10 +54,9 @@ class GameRepository : BaseRepository() {
         return callbackFlow {
             db.collection("groups/$groupId/games").whereEqualTo("isCompleted", false)
                 .limit(1)
-                .get()
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        task.result?.let { result ->
+                .addSnapshotListener { value, ex ->
+                    if (ex == null) {
+                        value?.let { result ->
                             result.firstOrNull()?.let { data ->
                                 val game = Game(
                                     data.id,
@@ -76,11 +75,10 @@ class GameRepository : BaseRepository() {
                                         .map { it.toDomain(users) }
                                 )
                                 offer(game)
-                                close()
                             }
                         }
                     } else {
-                        Log.w(tag, "Error getting documents.", task.exception)
+                        Log.w(tag, "Error getting documents.", ex)
                         close()
                     }
                 }

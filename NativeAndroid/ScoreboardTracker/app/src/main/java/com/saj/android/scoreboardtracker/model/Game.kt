@@ -8,6 +8,9 @@ data class Game(
     var isCompleted: Boolean,
     var winnerId: String,
     var loserId: String,
-    var date: Timestamp,
+    var timestamp: Timestamp,
     var userScores: List<UserScore>
-)
+) {
+
+    fun getDate() = timestamp.toDate()
+}

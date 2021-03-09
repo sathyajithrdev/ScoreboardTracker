@@ -30,10 +30,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.Game
-import com.saj.android.scoreboardtracker.model.User
 import com.saj.android.scoreboardtracker.model.UserScore
-import com.saj.android.scoreboardtracker.ui.components.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
+import com.saj.android.scoreboardtracker.ui.components.*
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
@@ -54,7 +53,7 @@ fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> 
                         .fillMaxWidth()
                 ) {
                     Text(
-                        stringResource(R.string.finish),
+                        text = stringResource(R.string.finish),
                         textAlign = TextAlign.Center,
                         fontSize = 16.sp,
                         color = Color.White,
@@ -93,9 +92,7 @@ fun UsersList(viewModel: MainViewModel, modifier: Modifier) {
 @Composable
 private fun UserScoreItem(userScore: UserScore) {
     val focusManager = LocalFocusManager.current
-    val gradientBackground = Brush.horizontalGradient(
-        colors = backgroundGradient
-    )
+    val gradientBackground = Brush.horizontalGradient(backgroundGradient)
     ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
         Row(
             modifier = Modifier
@@ -117,7 +114,8 @@ private fun UserScoreItem(userScore: UserScore) {
 
             VerticalGrid(modifier = Modifier.padding(0.dp), 3) {
                 userScore.scores.forEachIndexed { index, score ->
-                    val textValue = remember { mutableStateOf(score?.toString() ?: "") }
+                    val textValue = remember { mutableStateOf("") }
+                    textValue.value = score?.toString() ?: ""
                     OutlinedTextField(
                         value = textValue.value,
                         keyboardOptions = KeyboardOptions.Default.copy(
@@ -135,10 +133,11 @@ private fun UserScoreItem(userScore: UserScore) {
                         },
                     )
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth().height(64.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(70.dp),
+                    contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = userScore.getTotalScore().toString(),

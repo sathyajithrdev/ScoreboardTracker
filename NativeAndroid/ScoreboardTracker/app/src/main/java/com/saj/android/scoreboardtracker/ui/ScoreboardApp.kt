@@ -8,6 +8,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import com.saj.android.scoreboardtracker.ui.screens.home.Home
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
 import com.saj.android.scoreboardtracker.ui.utils.Navigator
+import dev.chrisbanes.accompanist.insets.ProvideWindowInsets
 
 @Composable
 fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatcher) {
@@ -17,14 +18,16 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
         Navigator(Destination.Home, backDispatcher)
     }
     val actions = remember(navigator) { Actions(navigator) }
-    ScoreboardTheme {
-        Crossfade(navigator.current) { destination ->
-            when (destination) {
-                Destination.Home -> Home(viewModel, actions.selectUser)
+    ProvideWindowInsets {
+        ScoreboardTheme {
+            Crossfade(navigator.current) { destination ->
+                when (destination) {
+                    Destination.Home -> Home(viewModel, actions.selectUser)
 //                    is Destination.UserDetail -> SnackDetail(
 //                        snackId = destination.userId,
 //                        upPress = actions.upPress
 //                    )
+                }
             }
         }
     }

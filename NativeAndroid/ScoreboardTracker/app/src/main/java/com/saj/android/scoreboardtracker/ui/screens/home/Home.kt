@@ -67,6 +67,7 @@ import com.saj.android.scoreboardtracker.ui.components.ScoreboardScaffold
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardSurface
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
+import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import kotlinx.coroutines.launch
 
 @Composable
@@ -127,7 +128,7 @@ private fun ScoreboardBottomNav(
             itemCount = items.size,
             indicator = { ScoreboardBottomNavIndicator() },
             animSpec = springSpec,
-            modifier = Modifier.padding(0.dp)
+            modifier = Modifier.navigationBarsPadding(left = false, right = false)
         ) {
             items.forEach { section ->
                 val selected = section == currentSection
