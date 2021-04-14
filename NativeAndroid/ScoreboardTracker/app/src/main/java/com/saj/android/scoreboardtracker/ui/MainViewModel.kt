@@ -5,12 +5,11 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.saj.android.scoreboardtracker.data.GameRepository
-import com.saj.android.scoreboardtracker.model.Game
-import com.saj.android.scoreboardtracker.model.Statistics
-import com.saj.android.scoreboardtracker.model.User
+import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.base.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class MainViewModel : BaseViewModel() {
@@ -33,6 +32,10 @@ class MainViewModel : BaseViewModel() {
     val scoreStatisticsLiveData: LiveData<List<Statistics>>
         get() = _scoreStatisticsLiveData
 
+    private val _recentPerformanceLiveData = MutableLiveData<List<UserRecentPerformance>>()
+    val recentPerformanceLiveData: LiveData<List<UserRecentPerformance>>
+        get() = _recentPerformanceLiveData
+
     private val _groupId = MutableLiveData<String>()
 
 
@@ -49,7 +52,7 @@ class MainViewModel : BaseViewModel() {
     @ExperimentalCoroutinesApi
     fun getUsersList(groupId: String) {
         viewModelScope.launch {
-            gameRepository.getUsersList()
+            gameRepository.getUsersList().distinctUntilChanged()
                 .collect {
                     _usersLiveData.value = it
                     getCompletedGames(groupId, it)
@@ -116,6 +119,34 @@ class MainViewModel : BaseViewModel() {
             gameRepository.getAllCompletedGames(groupId, users).collect {
                 _completedGamesLiveData.value = it.sortedByDescending { g -> g.timestamp }
                 populateScoreStatistics()
+                populateUserResultData(it)
+            }
+        }
+    }
+
+    private fun populateUserResultData(games: List<Game>) {
+        val sortedGames = games.sortedByDescending { g -> g.timestamp }
+        val recentGames = sortedGames.take(8)
+        val userPerformances = mutableListOf<UserRecentPerformance>()
+        _usersLiveData.value?.forEach { user ->
+            userPerformances.add(
+                UserRecentPerformance(
+                    user,
+                    getGameResultStatus(user, recentGames)
+                )
+            )
+        }
+
+        _recentPerformanceLiveData.value = userPerformances
+    }
+
+
+    private fun getGameResultStatus(user: User, games: List<Game>): List<GameResultStatus> {
+        return games.map {
+            when {
+                it.winnerId == user.userId -> GameResultStatus.Winner
+                it.loserId == user.userId -> GameResultStatus.Loser
+                else -> GameResultStatus.Neutral
             }
         }
     }

@@ -16,7 +16,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @ExperimentalCoroutinesApi
 @Composable
-fun loadPicture(url: String, @DrawableRes defaultImage: Int): MutableState<Bitmap?> {
+fun loadPicture(url: String, @DrawableRes defaultImage: Int? = null): MutableState<Bitmap?> {
 
     val bitmapState: MutableState<Bitmap?> = mutableStateOf(null)
 

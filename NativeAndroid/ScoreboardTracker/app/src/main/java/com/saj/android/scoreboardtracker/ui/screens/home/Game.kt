@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Icon
 import androidx.compose.material.OutlinedTextField
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -30,7 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.Game
-import com.saj.android.scoreboardtracker.model.UserScore
+import com.saj.android.scoreboardtracker.model.GameResultStatus
+import com.saj.android.scoreboardtracker.model.User
+import com.saj.android.scoreboardtracker.model.UserRecentPerformance
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
@@ -77,12 +81,11 @@ fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> 
 @ExperimentalCoroutinesApi
 @Composable
 fun UsersList(viewModel: MainViewModel, modifier: Modifier) {
-    val game: Game? by viewModel.onGoingGameLiveData.observeAsState()
-    game?.let {
+    val users: List<User>? by viewModel.userLiveData.observeAsState()
+    users?.let {
         LazyColumn(modifier.padding(16.dp, 32.dp, 16.dp, 0.dp)) {
-            items(count = it.userScores.size, itemContent = { index ->
-                val userScore = it.userScores[index]
-                UserScoreItem(userScore)
+            items(count = it.size, itemContent = { index ->
+                UserScoreItem(viewModel, it[index])
                 ScoreboardDivider(thickness = 16.dp, color = Color.Transparent)
             })
         }
@@ -90,8 +93,7 @@ fun UsersList(viewModel: MainViewModel, modifier: Modifier) {
 }
 
 @Composable
-private fun UserScoreItem(userScore: UserScore) {
-    val focusManager = LocalFocusManager.current
+private fun UserScoreItem(viewModel: MainViewModel, user: User) {
     val gradientBackground = Brush.horizontalGradient(backgroundGradient)
     ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
         Row(
@@ -99,54 +101,95 @@ private fun UserScoreItem(userScore: UserScore) {
                 .fillMaxWidth()
                 .background(gradientBackground)
         ) {
-            val image = loadPicture(
-                url = userScore.user.profileImageUrl,
-                defaultImage = R.drawable.common_full_open_on_phone
-            ).value
+            val image = loadPicture(url = user.profileImageUrl).value
             image?.let { img ->
-                Image(
-                    bitmap = img.asImageBitmap(),
-                    "",
-                    modifier = Modifier.size(150.dp, 200.dp),
-                    contentScale = ContentScale.Crop,
+
+                Box(modifier = Modifier.size(150.dp, 200.dp)) {
+                    Image(
+                        bitmap = img.asImageBitmap(),
+                        "",
+                        modifier = Modifier.size(150.dp, 200.dp),
+                        contentScale = ContentScale.Crop,
+                    )
+                    recentPerformance(viewModel, user)
+                }
+            }
+            ScoreView(viewModel, user)
+        }
+    }
+}
+
+@Composable
+private fun ScoreView(viewModel: MainViewModel, user: User) {
+    val game: Game? by viewModel.onGoingGameLiveData.observeAsState()
+    game?.userScores?.firstOrNull { it.user.userId == user.userId }?.let { userScore ->
+        val focusManager = LocalFocusManager.current
+        VerticalGrid(modifier = Modifier.padding(0.dp), 3) {
+            userScore.scores.forEachIndexed { index, score ->
+                val textValue = remember { mutableStateOf("") }
+                textValue.value = score?.toString() ?: ""
+                OutlinedTextField(
+                    value = textValue.value,
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done,
+                        keyboardType = KeyboardType.Number
+                    ),
+                    singleLine = true,
+                    keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+                    modifier = Modifier.padding(6.dp, 0.dp),
+                    onValueChange = {
+                        if (it.length <= 3) {
+                            textValue.value = it
+                            userScore.scores[index] = if (it.isEmpty()) null else it.toInt()
+                        }
+                    },
                 )
             }
-
-            VerticalGrid(modifier = Modifier.padding(0.dp), 3) {
-                userScore.scores.forEachIndexed { index, score ->
-                    val textValue = remember { mutableStateOf("") }
-                    textValue.value = score?.toString() ?: ""
-                    OutlinedTextField(
-                        value = textValue.value,
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Done,
-                            keyboardType = KeyboardType.Number
-                        ),
-                        singleLine = true,
-                        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                        modifier = Modifier.padding(6.dp, 0.dp),
-                        onValueChange = {
-                            if (it.length <= 3) {
-                                textValue.value = it
-                                userScore.scores[index] = if (it.isEmpty()) null else it.toInt()
-                            }
-                        },
-                    )
-                }
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(70.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = userScore.getTotalScore().toString(),
-                        fontSize = 18.sp,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(70.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = userScore.getTotalScore().toString(),
+                    fontSize = 18.sp,
+                    textAlign = TextAlign.Center
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun recentPerformance(viewModel: MainViewModel, user: User) {
+    val usersPerformance: List<UserRecentPerformance>? by viewModel.recentPerformanceLiveData.observeAsState()
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp, 4.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        usersPerformance?.firstOrNull { it.user.userId == user.userId }
+            ?.performance?.forEach {
+                Icon(
+                    painter = painterResource(
+                        when (it) {
+                            GameResultStatus.Winner -> R.drawable.ic_winner
+                            GameResultStatus.Loser -> R.drawable.ic_loser
+                            GameResultStatus.Neutral -> R.drawable.ic_neutral
+                        }
+                    ),
+                    tint =
+                    when (it) {
+                        GameResultStatus.Winner -> Color.Green
+                        GameResultStatus.Loser -> Color.Red
+                        GameResultStatus.Neutral -> Color(0xFFFFC000)
+                    },
+                    modifier = Modifier.size(16.dp),
+                    contentDescription = null // decorative element
+                )
+            }
     }
 }
 
