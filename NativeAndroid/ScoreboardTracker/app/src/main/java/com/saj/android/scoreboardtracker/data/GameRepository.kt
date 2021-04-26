@@ -4,10 +4,12 @@ import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.saj.android.scoreboardtracker.extensions.deserialize
+import com.saj.android.scoreboardtracker.extensions.nullIfEmpty
 import com.saj.android.scoreboardtracker.extensions.serialize
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.model.User
 import com.saj.android.scoreboardtracker.model.mappers.toDomain
+import com.saj.android.scoreboardtracker.model.mappers.toResponse
 import com.saj.android.scoreboardtracker.model.responses.UserScoreResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -86,6 +88,25 @@ class GameRepository : BaseRepository() {
         }.flowOn(Dispatchers.IO)
     }
 
+    fun updateGameToServer(groupId: String, game: Game): Flow<Boolean> {
+        return callbackFlow {
+            game.timestamp = Timestamp.now()
+            db.collection("groups/$groupId/games").document(game.gameId).update(
+                mapOf(
+                    "isCompleted" to game.isCompleted,
+                    "looserId" to game.loserId.nullIfEmpty(),
+                    "winnerId" to game.winnerId.nullIfEmpty(),
+                    "timeStamp" to game.timestamp,
+                    "scoresJson" to game.userScores.map { it.toResponse() }.serialize()
+                )
+            ).addOnCompleteListener { task ->
+                offer(task.isSuccessful)
+                close()
+            }
+            awaitClose { }
+        }.flowOn(Dispatchers.IO)
+    }
+
     fun getAllCompletedGames(groupId: String, users: List<User>): Flow<List<Game>> {
         return callbackFlow {
             db.collection("groups/$groupId/games").whereEqualTo("isCompleted", true)
@@ -128,7 +149,7 @@ class GameRepository : BaseRepository() {
             db.collection("groups").limit(1)
                 .get()
                 .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
+                    if (task.isSuccessful && task.result?.any() == true) {
                         task.result?.let { result ->
                             offer(result.first().id)
                             close()

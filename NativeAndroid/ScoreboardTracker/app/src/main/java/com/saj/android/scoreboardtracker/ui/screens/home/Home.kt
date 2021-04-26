@@ -24,6 +24,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.SpringSpec
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
@@ -50,12 +51,9 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.layout.MeasureResult
-import androidx.compose.ui.layout.MeasureScope
-import androidx.compose.ui.layout.Placeable
-import androidx.compose.ui.layout.layoutId
+import androidx.compose.ui.layout.*
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
@@ -87,19 +85,26 @@ fun Home(homeViewModel: MainViewModel, onUserSelected: (String) -> Unit) {
     ) { innerPadding ->
         val modifier = Modifier.padding(innerPadding)
         Crossfade(currentSection) { section ->
-            when (section) {
-                HomeSections.Game -> Game(
-                    viewModel = homeViewModel,
-                    onUserClick = onUserSelected,
-                    modifier = modifier
+            Box(Modifier.fillMaxSize()) {
+                Image(
+                    contentDescription = "",
+                    painter = painterResource(id = R.drawable.background),
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.FillBounds
                 )
-                HomeSections.Stats -> Statistics(
-                    modifier = modifier
-                )
-                HomeSections.History -> History(
-                    viewModel = homeViewModel,
-                    modifier = modifier
-                )
+                when (section) {
+                    HomeSections.Game -> Game(
+                        viewModel = homeViewModel,
+                        onUserClick = onUserSelected,
+                        modifier = modifier
+                    )
+                    HomeSections.Stats -> Statistics(
+                        modifier = modifier
+                    )
+                    HomeSections.History -> History(
+                        viewModel = homeViewModel
+                    )
+                }
             }
         }
     }

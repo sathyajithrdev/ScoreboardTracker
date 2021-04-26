@@ -14,6 +14,10 @@ import kotlinx.coroutines.launch
 
 class MainViewModel : BaseViewModel() {
 
+    enum class UIState {
+        EnterScoreForAllSets
+    }
+
     private val gameRepository = GameRepository()
 
     private val _usersLiveData = MutableLiveData<List<User>>()
@@ -36,8 +40,19 @@ class MainViewModel : BaseViewModel() {
     val recentPerformanceLiveData: LiveData<List<UserRecentPerformance>>
         get() = _recentPerformanceLiveData
 
+    private val _winStatsLiveData = MutableLiveData<List<UserWinStats>>()
+    val winStatsLiveData: LiveData<List<UserWinStats>>
+        get() = _winStatsLiveData
+
     private val _groupId = MutableLiveData<String>()
 
+    private val _canSaveGameLiveData = MutableLiveData(false)
+    val canSaveGameLiveData: LiveData<Boolean>
+        get() = _canSaveGameLiveData
+
+    private val _uiState = MutableLiveData<UIState?>()
+    val uiState: LiveData<UIState?>
+        get() = _uiState
 
     init {
         viewModelScope.launch {
@@ -57,6 +72,34 @@ class MainViewModel : BaseViewModel() {
                     _usersLiveData.value = it
                     getCompletedGames(groupId, it)
                     getCurrentOnGoingGame(groupId, it)
+                }
+        }
+    }
+
+    fun updateCurrentGameScore(userId: String, index: Int, score: Int?) {
+        _groupId.value?.let { groupId ->
+            _onGoingGameLiveData.value?.let { game ->
+                game.userScores.firstOrNull { userScore -> userScore.user.userId == userId }?.let {
+                    if (it.scores[index] != score) {
+                        it.scores[index] = score
+                        updateGame(groupId, game)
+                    }
+                }
+            }
+        }
+    }
+
+    fun onFinishGame() {
+        if (validateCurrentGame()) {
+
+        }
+    }
+
+    private fun updateGame(groupId: String, game: Game) {
+        viewModelScope.launch {
+            gameRepository.updateGameToServer(groupId, game)
+                .collect { isSuccess ->
+                    Log.e("MainViewModel", "Update to server is $isSuccess")
                 }
         }
     }
@@ -120,6 +163,7 @@ class MainViewModel : BaseViewModel() {
                 _completedGamesLiveData.value = it.sortedByDescending { g -> g.timestamp }
                 populateScoreStatistics()
                 populateUserResultData(it)
+                populateUserWinStats(it)
             }
         }
     }
@@ -136,8 +180,22 @@ class MainViewModel : BaseViewModel() {
                 )
             )
         }
-
         _recentPerformanceLiveData.value = userPerformances
+    }
+
+    private fun populateUserWinStats(games: List<Game>) {
+        val userWinStats = mutableListOf<UserWinStats>()
+        _usersLiveData.value?.forEach { user ->
+            val winStats = getGameResultStatus(user, games)
+            userWinStats.add(
+                UserWinStats(
+                    user,
+                    winStats.count { it == GameResultStatus.Winner },
+                    winStats.count { it == GameResultStatus.Loser },
+                    winStats.count { it == GameResultStatus.Neutral })
+            )
+        }
+        _winStatsLiveData.value = userWinStats
     }
 
 
@@ -157,5 +215,15 @@ class MainViewModel : BaseViewModel() {
                 _onGoingGameLiveData.value = it
             }
         }
+    }
+
+    private fun validateCurrentGame(): Boolean {
+        return onGoingGameLiveData.value?.let { game ->
+            val isValid = game.userScores.all { userScore -> userScore.scores.all { it != null } }
+            if (!isValid) {
+                _uiState.value = UIState.EnterScoreForAllSets
+            }
+            isValid
+        } ?: false
     }
 }

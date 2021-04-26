@@ -22,14 +22,13 @@ import com.saj.android.scoreboardtracker.extensions.toUIFormat
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
+import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @Composable
-fun History(viewModel: MainViewModel, modifier: Modifier = Modifier) {
-    ScoreboardSurface(modifier = modifier.fillMaxSize()) {
-        GameList(viewModel = viewModel)
-    }
+fun History(viewModel: MainViewModel) {
+    GameList(viewModel = viewModel)
 }
 
 @ExperimentalCoroutinesApi
@@ -39,7 +38,8 @@ fun GameList(viewModel: MainViewModel) {
     LazyColumn(
         Modifier
             .padding(16.dp, 32.dp, 16.dp, 0.dp)
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(TransparentBlack),
     ) {
         items(count = items.size, itemContent = { index ->
             GameScoreItem(items[index])

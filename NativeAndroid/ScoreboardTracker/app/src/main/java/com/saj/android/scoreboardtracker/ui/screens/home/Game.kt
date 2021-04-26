@@ -1,5 +1,6 @@
 package com.saj.android.scoreboardtracker.ui.screens.home
 
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -31,51 +32,51 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import com.saj.android.scoreboardtracker.R
-import com.saj.android.scoreboardtracker.model.Game
-import com.saj.android.scoreboardtracker.model.GameResultStatus
-import com.saj.android.scoreboardtracker.model.User
-import com.saj.android.scoreboardtracker.model.UserRecentPerformance
+import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
+import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> Unit) {
-    ScoreboardSurface(modifier = modifier.fillMaxSize()) {
-        ConstraintLayout(modifier = Modifier.fillMaxSize(),
-            content = {
-                val (finishButton, usersList) = createRefs()
-                ScoreboardButton(
-                    onClick = { /* Do something */ },
-                    shape = RectangleShape,
-                    modifier = Modifier
-                        .constrainAs(finishButton) {
-                            bottom.linkTo(parent.bottom)
-                        }
-                        .fillMaxWidth()
-                ) {
-                    Text(
-                        text = stringResource(R.string.finish),
-                        textAlign = TextAlign.Center,
-                        fontSize = 16.sp,
-                        color = Color.White,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(4.dp)
-                    )
-                }
-                UsersList(viewModel = viewModel, modifier = Modifier
-                    .constrainAs(usersList) {
-                        top.linkTo(parent.top)
-                        bottom.linkTo(finishButton.top)
-                        start.linkTo(parent.start)
-                        height = androidx.constraintlayout.compose.Dimension.fillToConstraints
+    ConstraintLayout(modifier = modifier
+        .fillMaxSize()
+        .background(TransparentBlack),
+        content = {
+            val (finishButton, usersList) = createRefs()
+            ScoreboardButton(
+                onClick = { viewModel.onFinishGame() },
+                shape = RectangleShape,
+                modifier = Modifier
+                    .constrainAs(finishButton) {
+                        bottom.linkTo(parent.bottom)
                     }
-                    .fillMaxWidth())
-            })
-    }
+                    .fillMaxWidth()
+            ) {
+                Text(
+                    text = stringResource(R.string.finish),
+                    textAlign = TextAlign.Center,
+                    fontSize = 16.sp,
+                    color = Color.White,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(4.dp)
+                )
+            }
+
+            UsersList(viewModel = viewModel, modifier = Modifier
+                .constrainAs(usersList) {
+                    top.linkTo(parent.top)
+                    bottom.linkTo(finishButton.top)
+                    start.linkTo(parent.start)
+                    height = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                }
+                .fillMaxWidth())
+        })
 }
 
 @ExperimentalCoroutinesApi
@@ -111,7 +112,18 @@ private fun UserScoreItem(viewModel: MainViewModel, user: User) {
                         modifier = Modifier.size(150.dp, 200.dp),
                         contentScale = ContentScale.Crop,
                     )
-                    recentPerformance(viewModel, user)
+                    recentPerformance(
+                        viewModel, user,
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(8.dp, 4.dp)
+                    )
+                    winStatsView(
+                        viewModel, user, Modifier
+                            .align(Alignment.BottomCenter)
+                            .fillMaxWidth()
+                            .background(TransparentBlack)
+                    )
                 }
             }
             ScoreView(viewModel, user)
@@ -140,7 +152,15 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
                     onValueChange = {
                         if (it.length <= 3) {
                             textValue.value = it
-                            userScore.scores[index] = if (it.isEmpty()) null else it.toInt()
+                            with(if (it.isEmpty()) null else it.toInt()) {
+                                if (userScore.scores[index] != this) {
+                                    viewModel.updateCurrentGameScore(
+                                        userScore.user.userId,
+                                        index,
+                                        this
+                                    )
+                                }
+                            }
                         }
                     },
                 )
@@ -162,12 +182,10 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
 }
 
 @Composable
-private fun recentPerformance(viewModel: MainViewModel, user: User) {
+private fun recentPerformance(viewModel: MainViewModel, user: User, modifier: Modifier) {
     val usersPerformance: List<UserRecentPerformance>? by viewModel.recentPerformanceLiveData.observeAsState()
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(8.dp, 4.dp),
+        modifier = modifier,
         horizontalArrangement = Arrangement.SpaceEvenly
     ) {
         usersPerformance?.firstOrNull { it.user.userId == user.userId }
@@ -190,6 +208,34 @@ private fun recentPerformance(viewModel: MainViewModel, user: User) {
                     contentDescription = null // decorative element
                 )
             }
+    }
+}
+
+@Composable
+private fun winStatsView(viewModel: MainViewModel, user: User, modifier: Modifier) {
+    val usersPerformance: List<UserWinStats>? by viewModel.winStatsLiveData.observeAsState()
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        usersPerformance?.firstOrNull { it.user.userId == user.userId }?.let {
+            Text(
+                modifier = Modifier.padding(4.dp),
+                text = it.wins.toString(),
+                color = Color.Green
+            )
+            Text(
+                modifier = Modifier.padding(4.dp),
+                text = it.runnerUp.toString(),
+                color = Color(0xFFFFC000)
+            )
+            Text(
+                modifier = Modifier.padding(4.dp),
+                text = it.losses.toString(),
+                color = Color.Red
+            )
+        }
+
     }
 }
 

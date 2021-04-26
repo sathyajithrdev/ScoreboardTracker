@@ -7,10 +7,12 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import com.saj.android.scoreboardtracker.ui.base.BaseActivity
 import com.saj.android.scoreboardtracker.ui.utils.LocalSysUiController
 import com.saj.android.scoreboardtracker.ui.utils.SystemUiController
 
-class MainActivity : ComponentActivity() {
+class MainActivity : BaseActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -24,5 +26,17 @@ class MainActivity : ComponentActivity() {
                 ScoreboardApp(viewModel, onBackPressedDispatcher)
             }
         }
+        setObservers(viewModel)
+    }
+
+    private fun setObservers(viewModel: MainViewModel) {
+        viewModel.uiState.observe(this, {
+            when (it) {
+                MainViewModel.UIState.EnterScoreForAllSets -> showToast("Enter scores for all sets")
+                null -> {
+
+                }
+            }
+        })
     }
 }

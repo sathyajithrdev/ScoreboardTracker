@@ -12,3 +12,5 @@ inline fun <reified T> String.deserialize(): T {
 inline fun <reified T> T.serialize(): String {
     return Json.encodeToString(this)
 }
+
+inline fun String.nullIfEmpty() = if (this.isBlank()) null else this
