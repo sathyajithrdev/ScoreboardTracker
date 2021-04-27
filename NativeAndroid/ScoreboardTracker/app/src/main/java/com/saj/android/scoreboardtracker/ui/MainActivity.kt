@@ -1,7 +1,6 @@
 package com.saj.android.scoreboardtracker.ui
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -31,12 +30,32 @@ class MainActivity : BaseActivity() {
 
     private fun setObservers(viewModel: MainViewModel) {
         viewModel.uiState.observe(this, {
-            when (it) {
+            when (it?.first) {
                 MainViewModel.UIState.EnterScoreForAllSets -> showToast("Enter scores for all sets")
+                MainViewModel.UIState.UserLostGame -> showToast(it.second)
                 null -> {
 
                 }
             }
         })
+
+//        viewModel.completedGamesLiveData.observe(this, {
+//            Log.e("Games", "Games size is ${it.size}")
+//            saveTextFile(it.serialize())
+//        })
     }
+
+//    private fun saveTextFile(data: String) {
+//        try {
+//            val fileOutputStream: FileOutputStream =
+//                openFileOutput("gameJson${System.currentTimeMillis()}.txt", Context.MODE_PRIVATE)
+//            val outputWriter = OutputStreamWriter(fileOutputStream)
+//            outputWriter.write(data)
+//            outputWriter.close()
+//            //display file saved message
+//            Toast.makeText(baseContext, "File saved successfully!", Toast.LENGTH_SHORT).show()
+//        } catch (e: Exception) {
+//            e.printStackTrace()
+//        }
+//    }
 }

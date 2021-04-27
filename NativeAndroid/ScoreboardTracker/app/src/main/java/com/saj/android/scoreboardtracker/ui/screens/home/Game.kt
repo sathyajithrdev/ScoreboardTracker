@@ -1,6 +1,9 @@
 package com.saj.android.scoreboardtracker.ui.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,6 +25,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -30,7 +34,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.constraintlayout.compose.ConstraintLayout
+import com.airbnb.lottie.LottieAnimationView
+import com.airbnb.lottie.LottieDrawable
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
@@ -47,36 +54,57 @@ fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> 
         .fillMaxSize()
         .background(TransparentBlack),
         content = {
-            val (finishButton, usersList) = createRefs()
-            ScoreboardButton(
-                onClick = { viewModel.onFinishGame() },
-                shape = RectangleShape,
-                modifier = Modifier
-                    .constrainAs(finishButton) {
-                        bottom.linkTo(parent.bottom)
-                    }
-                    .fillMaxWidth()
-            ) {
-                Text(
-                    text = stringResource(R.string.finish),
-                    textAlign = TextAlign.Center,
-                    fontSize = 16.sp,
-                    color = Color.White,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp)
-                )
+            val (finishButton, usersList, winnerAnimation) = createRefs()
+            Box(
+                Modifier
+                    .constrainAs(finishButton) { bottom.linkTo(parent.bottom) }
+                    .fillMaxWidth()) {
+                finishButton(viewModel)
             }
 
-            UsersList(viewModel = viewModel, modifier = Modifier
-                .constrainAs(usersList) {
+            UsersList(
+                viewModel = viewModel,
+                modifier = Modifier
+                    .constrainAs(usersList) {
+                        top.linkTo(parent.top)
+                        bottom.linkTo(finishButton.top)
+                        start.linkTo(parent.start)
+                        height = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                    }
+                    .fillMaxWidth())
+
+            WinnerAnimation(
+                viewModel = viewModel,
+                modifier = Modifier.constrainAs(winnerAnimation) {
                     top.linkTo(parent.top)
-                    bottom.linkTo(finishButton.top)
+                    bottom.linkTo(parent.bottom)
                     start.linkTo(parent.start)
-                    height = androidx.constraintlayout.compose.Dimension.fillToConstraints
-                }
-                .fillMaxWidth())
+                    end.linkTo(parent.end)
+                })
         })
+}
+
+@ExperimentalAnimationApi
+@Composable
+private fun finishButton(viewModel: MainViewModel) {
+    val canSaveGame: Boolean by viewModel.canSaveGameLiveData.observeAsState(false)
+    AnimatedVisibility(visible = canSaveGame) {
+        ScoreboardButton(
+            onClick = { viewModel.onFinishGame() },
+            shape = RectangleShape,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = stringResource(R.string.finish),
+                textAlign = TextAlign.Center,
+                fontSize = 16.sp,
+                color = Color.White,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp)
+            )
+        }
+    }
 }
 
 @ExperimentalCoroutinesApi
@@ -236,6 +264,43 @@ private fun winStatsView(viewModel: MainViewModel, user: User, modifier: Modifie
             )
         }
 
+    }
+}
+
+@ExperimentalAnimationApi
+@Composable
+fun WinnerAnimation(modifier: Modifier, viewModel: MainViewModel) {
+    val winnerData: Pair<Boolean, User?>? by viewModel.winnerLiveData.observeAsState()
+    val context = LocalContext.current
+    val customView = remember { LottieAnimationView(context) }
+    AnimatedVisibility(
+        visible = winnerData?.first == true,
+        modifier = modifier.size(300.dp, 300.dp),
+        enter = expandIn(),
+        exit = shrinkOut()
+    ) {
+        Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            winnerData?.second?.let { user ->
+                val image = loadPicture(url = user.profileImageUrl).value
+                image?.let { img ->
+                    Image(
+                        bitmap = img.asImageBitmap(),
+                        "",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                    AndroidView({ customView }) { view ->
+                        // View's been inflated - add logic here if necessary
+                        with(view) {
+                            setAnimation(R.raw.winner_animation)
+                            playAnimation()
+                            repeatCount = 10
+                            repeatMode = LottieDrawable.RESTART
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

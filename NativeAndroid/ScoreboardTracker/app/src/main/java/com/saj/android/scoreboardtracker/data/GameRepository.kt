@@ -4,12 +4,9 @@ import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.saj.android.scoreboardtracker.extensions.deserialize
-import com.saj.android.scoreboardtracker.extensions.nullIfEmpty
-import com.saj.android.scoreboardtracker.extensions.serialize
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.model.User
 import com.saj.android.scoreboardtracker.model.mappers.toDomain
-import com.saj.android.scoreboardtracker.model.mappers.toResponse
 import com.saj.android.scoreboardtracker.model.responses.UserScoreResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,7 +41,7 @@ class GameRepository : BaseRepository() {
                             close()
                         }
                     } else {
-                        Log.w(tag, "Error getting documents.", task.exception)
+                        Log.w(tag, "Error getting getUsersList.", task.exception)
                         close()
                     }
                 }
@@ -66,11 +63,7 @@ class GameRepository : BaseRepository() {
                                     data["winnerId"].toString(),
                                     data["looserId"].toString(),
                                     data["timeStamp"] as Timestamp? ?: Timestamp(
-                                        GregorianCalendar(
-                                            2000,
-                                            1,
-                                            1
-                                        ).time
+                                        GregorianCalendar(2000, 1, 1).time
                                     ),
                                     data["scoresJson"].toString()
                                         .deserialize<List<UserScoreResponse>>()
@@ -92,13 +85,20 @@ class GameRepository : BaseRepository() {
         return callbackFlow {
             game.timestamp = Timestamp.now()
             db.collection("groups/$groupId/games").document(game.gameId).update(
-                mapOf(
-                    "isCompleted" to game.isCompleted,
-                    "looserId" to game.loserId.nullIfEmpty(),
-                    "winnerId" to game.winnerId.nullIfEmpty(),
-                    "timeStamp" to game.timestamp,
-                    "scoresJson" to game.userScores.map { it.toResponse() }.serialize()
-                )
+                game.getGameJsonMap()
+            ).addOnCompleteListener { task ->
+                offer(task.isSuccessful)
+                close()
+            }
+            awaitClose { }
+        }.flowOn(Dispatchers.IO)
+    }
+
+    fun addNewGameToServer(groupId: String, game: Game): Flow<Boolean> {
+        return callbackFlow {
+            game.timestamp = Timestamp.now()
+            db.collection("groups/$groupId/games").document().set(
+                game.getGameJsonMap()
             ).addOnCompleteListener { task ->
                 offer(task.isSuccessful)
                 close()
@@ -121,11 +121,7 @@ class GameRepository : BaseRepository() {
                                     data["winnerId"].toString(),
                                     data["looserId"].toString(),
                                     data["timeStamp"] as Timestamp? ?: Timestamp(
-                                        GregorianCalendar(
-                                            2000,
-                                            1,
-                                            1
-                                        ).time
+                                        GregorianCalendar(2000, 1, 1).time
                                     ),
                                     data["scoresJson"].toString()
                                         .deserialize<List<UserScoreResponse>>()
