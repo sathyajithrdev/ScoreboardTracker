@@ -29,6 +29,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
@@ -68,6 +69,7 @@ import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
 import dev.chrisbanes.accompanist.insets.navigationBarsPadding
 import kotlinx.coroutines.launch
 
+@ExperimentalMaterialApi
 @Composable
 fun Home(homeViewModel: MainViewModel, onUserSelected: (String) -> Unit) {
     val (currentSection, setCurrentSection) = rememberSaveable {

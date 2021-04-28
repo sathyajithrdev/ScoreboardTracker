@@ -2,6 +2,7 @@ package com.saj.android.scoreboardtracker.ui
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
@@ -12,6 +13,7 @@ import com.saj.android.scoreboardtracker.ui.utils.SystemUiController
 
 class MainActivity : BaseActivity() {
 
+    @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

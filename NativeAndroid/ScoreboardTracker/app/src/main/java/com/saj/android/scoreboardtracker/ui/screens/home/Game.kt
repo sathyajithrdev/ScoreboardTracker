@@ -6,24 +6,21 @@ import androidx.compose.animation.expandIn
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Icon
-import androidx.compose.material.OutlinedTextField
-import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.material.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -36,20 +33,42 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.constraintlayout.compose.ConstraintLayout
+import androidx.constraintlayout.compose.Dimension
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
+import com.saj.android.scoreboardtracker.ui.theme.Ocean8
+import com.saj.android.scoreboardtracker.ui.theme.SemiTransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 
-
-@OptIn(ExperimentalAnimationApi::class)
+@ExperimentalMaterialApi
 @Composable
 fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> Unit) {
+
+    val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
+    ModalBottomSheetLayout(
+        sheetState = state,
+        scrimColor = SemiTransparentBlack,
+        sheetContent = { ServerSequenceSetupContent(viewModel, state) }
+    ) {
+        ScoreboardContent(state, modifier, viewModel)
+    }
+}
+
+@ExperimentalMaterialApi
+@OptIn(ExperimentalAnimationApi::class)
+@Composable
+private fun ScoreboardContent(
+    bottomSheetScaffoldState: ModalBottomSheetState,
+    modifier: Modifier,
+    viewModel: MainViewModel
+) {
     ConstraintLayout(modifier = modifier
         .fillMaxSize()
         .background(TransparentBlack),
@@ -63,13 +82,14 @@ fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> 
             }
 
             UsersList(
+                bottomSheetScaffoldState = bottomSheetScaffoldState,
                 viewModel = viewModel,
                 modifier = Modifier
                     .constrainAs(usersList) {
                         top.linkTo(parent.top)
                         bottom.linkTo(finishButton.top)
                         start.linkTo(parent.start)
-                        height = androidx.constraintlayout.compose.Dimension.fillToConstraints
+                        height = Dimension.fillToConstraints
                     }
                     .fillMaxWidth())
 
@@ -107,23 +127,36 @@ private fun finishButton(viewModel: MainViewModel) {
     }
 }
 
+@ExperimentalAnimationApi
+@ExperimentalMaterialApi
 @ExperimentalCoroutinesApi
 @Composable
-fun UsersList(viewModel: MainViewModel, modifier: Modifier) {
+fun UsersList(
+    bottomSheetScaffoldState: ModalBottomSheetState,
+    viewModel: MainViewModel,
+    modifier: Modifier
+) {
     val users: List<User>? by viewModel.userLiveData.observeAsState()
     users?.let {
         LazyColumn(modifier.padding(16.dp, 32.dp, 16.dp, 0.dp)) {
             items(count = it.size, itemContent = { index ->
-                UserScoreItem(viewModel, it[index])
+                UserScoreItem(bottomSheetScaffoldState, viewModel, it[index])
                 ScoreboardDivider(thickness = 16.dp, color = Color.Transparent)
             })
         }
     }
 }
 
+@ExperimentalAnimationApi
+@ExperimentalMaterialApi
 @Composable
-private fun UserScoreItem(viewModel: MainViewModel, user: User) {
+private fun UserScoreItem(
+    bottomSheetScaffoldState: ModalBottomSheetState,
+    viewModel: MainViewModel,
+    user: User
+) {
     val gradientBackground = Brush.horizontalGradient(backgroundGradient)
+    val coroutineScope = rememberCoroutineScope()
     ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
         Row(
             modifier = Modifier
@@ -132,12 +165,19 @@ private fun UserScoreItem(viewModel: MainViewModel, user: User) {
         ) {
             val image = loadPicture(url = user.profileImageUrl).value
             image?.let { img ->
-
                 Box(modifier = Modifier.size(150.dp, 200.dp)) {
                     Image(
                         bitmap = img.asImageBitmap(),
                         "",
-                        modifier = Modifier.size(150.dp, 200.dp),
+                        modifier = Modifier
+                            .size(150.dp, 200.dp)
+                            .pointerInput(Unit) {
+                                detectTapGestures(onLongPress = {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.show()
+                                    }
+                                })
+                            },
                         contentScale = ContentScale.Crop,
                     )
                     recentPerformance(
@@ -152,11 +192,28 @@ private fun UserScoreItem(viewModel: MainViewModel, user: User) {
                             .fillMaxWidth()
                             .background(TransparentBlack)
                     )
+                    nextToServeUserView(viewModel, user, Modifier.align(Alignment.CenterStart))
                 }
             }
             ScoreView(viewModel, user)
         }
     }
+}
+
+@ExperimentalAnimationApi
+@Composable
+fun nextToServeUserView(viewModel: MainViewModel, user: User, modifier: Modifier) {
+
+    val serverUserId: String by viewModel.nextServerUserLiveData.observeAsState("")
+    AnimatedVisibility(visible = serverUserId == user.userId, modifier = modifier) {
+        Icon(
+            painter = painterResource(R.drawable.ic_next_server),
+            modifier = Modifier.size(20.dp),
+            tint = Ocean8,
+            contentDescription = null
+        )
+    }
+
 }
 
 @Composable

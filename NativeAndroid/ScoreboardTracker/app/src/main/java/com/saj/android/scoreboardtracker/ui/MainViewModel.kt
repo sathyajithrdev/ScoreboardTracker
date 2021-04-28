@@ -5,7 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.Timestamp
+import com.saj.android.scoreboardtracker.ScoreboardTrackerApp
 import com.saj.android.scoreboardtracker.data.GameRepository
+import com.saj.android.scoreboardtracker.extensions.deserialize
+import com.saj.android.scoreboardtracker.extensions.serialize
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.base.BaseViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -13,6 +16,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import java.lang.Exception
 
 class MainViewModel : BaseViewModel() {
 
@@ -24,6 +28,10 @@ class MainViewModel : BaseViewModel() {
     }
 
     private val gameRepository = GameRepository()
+
+    private val _usersServeSequenceLiveData = MutableLiveData<List<UserServeSequence>>()
+    val usersServeSequenceLiveData: LiveData<List<UserServeSequence>>
+        get() = _usersServeSequenceLiveData
 
     private val _usersLiveData = MutableLiveData<List<User>>()
     val userLiveData: LiveData<List<User>>
@@ -63,10 +71,13 @@ class MainViewModel : BaseViewModel() {
     val winnerLiveData: LiveData<Pair<Boolean, User?>>
         get() = _winnerLiveData
 
+    private val _nextServerUserLiveData = MutableLiveData<String>()
+    val nextServerUserLiveData: LiveData<String>
+        get() = _nextServerUserLiveData
+
     init {
         viewModelScope.launch {
             gameRepository.getGroupId().collect {
-                Log.e("GroupId", "Group id is $it")
                 _groupId.value = it
                 getUsersList(it)
             }
@@ -81,8 +92,25 @@ class MainViewModel : BaseViewModel() {
                     _usersLiveData.value = it
                     refreshGameStatistics(groupId, it)
                     getCurrentOnGoingGame(groupId, it)
+                    setServeSequenceData(it)
                 }
         }
+    }
+
+    private fun setServeSequenceData(users: List<User>) {
+        val sequenceData = mutableListOf<UserServeSequence>()
+        val savedSequence = getServeSequenceData()
+        users.forEach { user ->
+            val index = savedSequence?.firstOrNull { it -> it.userId == user.userId }?.order
+            sequenceData.add(UserServeSequence(user.userId, user.name, false, index))
+        }
+        _usersServeSequenceLiveData.postValue(sequenceData)
+    }
+
+    private fun getServeSequenceData() = try {
+        ScoreboardTrackerApp.prefs.serveSequenceJsonPref?.deserialize<List<UserServeSequence>>()
+    } catch (ex: Exception) {
+        null
     }
 
     fun updateCurrentGameScore(userId: String, index: Int, score: Int?) {
@@ -92,7 +120,8 @@ class MainViewModel : BaseViewModel() {
                     if (it.scores[index] != score) {
                         it.scores[index] = score
                         updateGame(groupId, game)
-                        _canSaveGameLiveData.postValue(validateCurrentGame())
+                        _canSaveGameLiveData.postValue(isScoreEnteredForAllSets())
+                        calculateNextUserToServe()
                     }
                 }
             }
@@ -267,17 +296,22 @@ class MainViewModel : BaseViewModel() {
                     }
                 }
                 _onGoingGameLiveData.value = it
+                calculateNextUserToServe()
             }
         }
     }
 
     private fun validateCurrentGame(): Boolean {
+        val isValid = isScoreEnteredForAllSets()
+        if (!isScoreEnteredForAllSets()) {
+            _uiState.value = Pair(UIState.EnterScoreForAllSets, "")
+        }
+        return isValid
+    }
+
+    private fun isScoreEnteredForAllSets(): Boolean {
         return onGoingGameLiveData.value?.let { game ->
-            val isValid = game.userScores.all { userScore -> userScore.scores.all { it != null } }
-            if (!isValid) {
-                _uiState.value = Pair(UIState.EnterScoreForAllSets, "")
-            }
-            isValid
+            game.userScores.all { userScore -> userScore.scores.all { it != null } }
         } ?: false
     }
 
@@ -287,5 +321,47 @@ class MainViewModel : BaseViewModel() {
             mutableList.add(null)
         }
         return mutableList
+    }
+
+    fun onSaveServeSequence(): Boolean {
+        if (validateServeSequence()) {
+            _usersServeSequenceLiveData.value?.sortedBy { it.order }?.forEachIndexed { index, it ->
+                it.order = index + 1
+            }
+            ScoreboardTrackerApp.prefs.serveSequenceJsonPref =
+                _usersServeSequenceLiveData.value?.serialize()
+            calculateNextUserToServe()
+            return true
+        }
+        return false
+    }
+
+    private fun validateServeSequence(): Boolean {
+        return _usersServeSequenceLiveData.value?.let { data ->
+            data.all { it.order != null } && data.groupBy { it.order }.all { it.value.size == 1 }
+        } ?: true
+    }
+
+    private fun calculateNextUserToServe() {
+        _usersServeSequenceLiveData.value?.sortedBy { it.order }?.let { sequence ->
+            _onGoingGameLiveData.value?.let { game ->
+                val nextRoundIndex =
+                    game.userScores.minOf { it.scores.count { score -> score != null } } + 1
+
+                val userToServeIndex = with(nextRoundIndex % 3) {
+                    if (this <= 0) 3 else this
+                } - 1
+
+                val noOfRounds = game.userScores.firstOrNull()?.scores?.size ?: 0
+
+                val nextServerUserId =
+                    if (nextRoundIndex <= noOfRounds && userToServeIndex >= 0 && userToServeIndex < sequence.size) {
+                        sequence[userToServeIndex].userId
+                    } else {
+                        ""
+                    }
+                _nextServerUserLiveData.postValue(nextServerUserId)
+            }
+        }
     }
 }

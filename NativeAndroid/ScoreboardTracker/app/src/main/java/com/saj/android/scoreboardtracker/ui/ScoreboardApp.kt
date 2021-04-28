@@ -2,6 +2,7 @@ package com.saj.android.scoreboardtracker.ui
 
 import androidx.activity.OnBackPressedDispatcher
 import androidx.compose.animation.Crossfade
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -10,6 +11,7 @@ import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
 import com.saj.android.scoreboardtracker.ui.utils.Navigator
 import dev.chrisbanes.accompanist.insets.ProvideWindowInsets
 
+@ExperimentalMaterialApi
 @Composable
 fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatcher) {
     val navigator: Navigator<Destination> = rememberSaveable(
