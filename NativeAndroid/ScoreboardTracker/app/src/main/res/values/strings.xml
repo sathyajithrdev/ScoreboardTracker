@@ -5,4 +5,11 @@
     <string name="history_route">History</string>
     <string name="finish">Finish</string>
     <string name="save">Save</string>
+
+    <string name="no_internet_connection">Could not connect to the network. Please check your Internet connection.</string>
+    <string name="finishing_game">Finishing game, please wait…</string>
+    <string name="loading_wait">Loading, please wait…</string>
+    <string name="something_went_wrong">Something went wrong, please try again later.</string>
+    <string name="enter_score_for_all_set">Enter scores for all sets</string>
+
 </resources>

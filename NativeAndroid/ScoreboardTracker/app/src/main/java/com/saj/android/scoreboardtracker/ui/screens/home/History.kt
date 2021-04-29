@@ -17,7 +17,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.extensions.toUIFormat
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.ui.MainViewModel
@@ -54,17 +53,15 @@ private fun GameScoreItem(game: Game) {
         colors = backgroundGradient
     )
     val scoreCardHeight = 200.dp
+    val winner = game.userScores.firstOrNull { us -> us.user.userId == game.winnerId }?.user
+
     ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradientBackground)
         ) {
-            val image = loadPicture(
-                url = game.userScores.firstOrNull { us -> us.user.userId == game.winnerId }?.user?.profileImageUrl
-                    ?: "",
-                defaultImage = R.drawable.common_full_open_on_phone
-            ).value
+            val image = loadPicture(url = winner?.profileImageUrl ?: "").value
             image?.let { img ->
                 Image(
                     bitmap = img.asImageBitmap(),

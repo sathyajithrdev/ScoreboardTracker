@@ -7,6 +7,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
+import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.ui.base.BaseActivity
 import com.saj.android.scoreboardtracker.ui.utils.LocalSysUiController
 import com.saj.android.scoreboardtracker.ui.utils.SystemUiController
@@ -33,10 +34,19 @@ class MainActivity : BaseActivity() {
     private fun setObservers(viewModel: MainViewModel) {
         viewModel.uiState.observe(this, {
             when (it?.first) {
-                MainViewModel.UIState.EnterScoreForAllSets -> showToast("Enter scores for all sets")
+                MainViewModel.UIState.EnterScoreForAllSets -> showToast(getString(R.string.enter_score_for_all_set))
                 MainViewModel.UIState.UserLostGame -> showToast(it.second)
+                MainViewModel.UIState.Error -> {
+                    if (hasNetworkConnection()) {
+                        showToast(getString(R.string.something_went_wrong))
+                    } else {
+                        showToast(getString(R.string.no_internet_connection))
+                    }
+                }
+                MainViewModel.UIState.Loading,
+                MainViewModel.UIState.Loaded,
+                MainViewModel.UIState.FinishingGame,
                 null -> {
-
                 }
             }
         })

@@ -94,7 +94,7 @@ fun StatisticsPagerItem(statistics: Statistics, isSelected: Boolean) {
             image?.let { img ->
                 Image(
                     bitmap = img.asImageBitmap(),
-                    "",
+                    contentDescription = "",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(360.dp),

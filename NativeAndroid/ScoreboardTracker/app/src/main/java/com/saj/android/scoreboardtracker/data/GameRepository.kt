@@ -1,10 +1,10 @@
 package com.saj.android.scoreboardtracker.data
 
-import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.saj.android.scoreboardtracker.extensions.deserialize
 import com.saj.android.scoreboardtracker.model.Game
+import com.saj.android.scoreboardtracker.model.Resource
 import com.saj.android.scoreboardtracker.model.User
 import com.saj.android.scoreboardtracker.model.mappers.toDomain
 import com.saj.android.scoreboardtracker.model.responses.UserScoreResponse
@@ -23,7 +23,7 @@ class GameRepository : BaseRepository() {
     private val db = FirebaseFirestore.getInstance()
 
     @ExperimentalCoroutinesApi
-    fun getUsersList(): Flow<List<User>> {
+    fun getUsersList(): Flow<Resource<List<User>>> {
         return callbackFlow {
             db.collection("users")
                 .get()
@@ -37,11 +37,11 @@ class GameRepository : BaseRepository() {
                                     it["profileUrl"].toString()
                                 )
                             }
-                            offer(users)
+                            offer(Resource.success(users))
                             close()
                         }
                     } else {
-                        Log.w(tag, "Error getting getUsersList.", task.exception)
+                        offer(Resource.genericError("Error getting getUsersList."))
                         close()
                     }
                 }
@@ -49,7 +49,8 @@ class GameRepository : BaseRepository() {
         }.flowOn(Dispatchers.IO)
     }
 
-    fun getCurrentOnGoingGame(groupId: String, users: List<User>): Flow<Game> {
+    @ExperimentalCoroutinesApi
+    fun getCurrentOnGoingGame(groupId: String, users: List<User>): Flow<Resource<Game>> {
         return callbackFlow {
             db.collection("groups/$groupId/games").whereEqualTo("isCompleted", false)
                 .limit(1)
@@ -69,11 +70,11 @@ class GameRepository : BaseRepository() {
                                         .deserialize<List<UserScoreResponse>>()
                                         .map { it.toDomain(users) }
                                 )
-                                offer(game)
+                                offer(Resource.success(game))
                             }
                         }
                     } else {
-                        Log.w(tag, "Error getting documents.", ex)
+                        offer(Resource.genericError("error getting current game"))
                         close()
                     }
                 }
@@ -81,33 +82,44 @@ class GameRepository : BaseRepository() {
         }.flowOn(Dispatchers.IO)
     }
 
-    fun updateGameToServer(groupId: String, game: Game): Flow<Boolean> {
+    @ExperimentalCoroutinesApi
+    fun updateGameToServer(groupId: String, game: Game): Flow<Resource<Boolean>> {
         return callbackFlow {
             game.timestamp = Timestamp.now()
             db.collection("groups/$groupId/games").document(game.gameId).update(
                 game.getGameJsonMap()
             ).addOnCompleteListener { task ->
-                offer(task.isSuccessful)
+                if (task.isSuccessful) {
+                    offer(Resource.success(task.isSuccessful))
+                } else {
+                    offer(Resource.genericError<Boolean>("Update game failed"))
+                }
                 close()
             }
             awaitClose { }
         }.flowOn(Dispatchers.IO)
     }
 
-    fun addNewGameToServer(groupId: String, game: Game): Flow<Boolean> {
+    @ExperimentalCoroutinesApi
+    fun addNewGameToServer(groupId: String, game: Game): Flow<Resource<Boolean>> {
         return callbackFlow {
             game.timestamp = Timestamp.now()
             db.collection("groups/$groupId/games").document().set(
                 game.getGameJsonMap()
             ).addOnCompleteListener { task ->
-                offer(task.isSuccessful)
+                if (task.isSuccessful) {
+                    offer(Resource.success(task.isSuccessful))
+                } else {
+                    offer(Resource.genericError<Boolean>("add new game failed"))
+                }
                 close()
             }
             awaitClose { }
         }.flowOn(Dispatchers.IO)
     }
 
-    fun getAllCompletedGames(groupId: String, users: List<User>): Flow<List<Game>> {
+    @ExperimentalCoroutinesApi
+    fun getAllCompletedGames(groupId: String, users: List<User>): Flow<Resource<List<Game>>> {
         return callbackFlow {
             db.collection("groups/$groupId/games").whereEqualTo("isCompleted", true)
                 .get()
@@ -128,11 +140,11 @@ class GameRepository : BaseRepository() {
                                         .map { it.toDomain(users) }
                                 )
                             }
-                            offer(games)
+                            offer(Resource.success(games))
                             close()
                         }
                     } else {
-                        Log.w(tag, "Error getting documents.", task.exception)
+                        offer(Resource.genericError("Get all completed games failed"))
                         close()
                     }
                 }
@@ -140,18 +152,19 @@ class GameRepository : BaseRepository() {
         }.flowOn(Dispatchers.IO)
     }
 
-    fun getGroupId(): Flow<String> {
+    @ExperimentalCoroutinesApi
+    fun getGroupId(): Flow<Resource<String>> {
         return callbackFlow {
             db.collection("groups").limit(1)
                 .get()
                 .addOnCompleteListener { task ->
                     if (task.isSuccessful && task.result?.any() == true) {
                         task.result?.let { result ->
-                            offer(result.first().id)
+                            offer(Resource.success(result.first().id))
                             close()
                         }
                     } else {
-                        Log.w(tag, "Error getting documents.", task.exception)
+                        offer(Resource.genericError("Error getting group id"))
                         close()
                     }
                 }

@@ -40,17 +40,13 @@ import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
-import com.saj.android.scoreboardtracker.ui.theme.Ocean8
-import com.saj.android.scoreboardtracker.ui.theme.SemiTransparentBlack
-import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
-import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
+import com.saj.android.scoreboardtracker.ui.theme.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
 @Composable
 fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> Unit) {
-
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     ModalBottomSheetLayout(
         sheetState = state,
@@ -69,39 +65,52 @@ private fun ScoreboardContent(
     modifier: Modifier,
     viewModel: MainViewModel
 ) {
-    ConstraintLayout(modifier = modifier
-        .fillMaxSize()
-        .background(TransparentBlack),
-        content = {
-            val (finishButton, usersList, winnerAnimation) = createRefs()
-            Box(
-                Modifier
-                    .constrainAs(finishButton) { bottom.linkTo(parent.bottom) }
-                    .fillMaxWidth()) {
-                finishButton(viewModel)
-            }
 
-            UsersList(
-                bottomSheetScaffoldState = bottomSheetScaffoldState,
-                viewModel = viewModel,
-                modifier = Modifier
-                    .constrainAs(usersList) {
+    val uiState by viewModel.uiState.observeAsState()
+    val isLoading = uiState?.first == MainViewModel.UIState.Loading
+
+    LoadingView(stringResource(R.string.loading_wait), isLoading)
+
+    if (!isLoading) {
+        ConstraintLayout(
+            modifier = modifier
+                .fillMaxSize()
+                .background(TransparentBlack),
+            content = {
+                val (finishButton, usersList, winnerAnimation) = createRefs()
+                Box(
+                    Modifier
+                        .constrainAs(finishButton) { bottom.linkTo(parent.bottom) }
+                        .fillMaxWidth()) {
+                    finishButton(viewModel)
+                }
+
+                UsersList(
+                    bottomSheetScaffoldState = bottomSheetScaffoldState,
+                    viewModel = viewModel,
+                    modifier = Modifier
+                        .constrainAs(usersList) {
+                            top.linkTo(parent.top)
+                            bottom.linkTo(finishButton.top)
+                            start.linkTo(parent.start)
+                            height = Dimension.fillToConstraints
+                        }
+                        .fillMaxWidth())
+
+                WinnerAnimation(
+                    viewModel = viewModel,
+                    modifier = Modifier.constrainAs(winnerAnimation) {
                         top.linkTo(parent.top)
-                        bottom.linkTo(finishButton.top)
+                        bottom.linkTo(parent.bottom)
                         start.linkTo(parent.start)
-                        height = Dimension.fillToConstraints
-                    }
-                    .fillMaxWidth())
-
-            WinnerAnimation(
-                viewModel = viewModel,
-                modifier = Modifier.constrainAs(winnerAnimation) {
-                    top.linkTo(parent.top)
-                    bottom.linkTo(parent.bottom)
-                    start.linkTo(parent.start)
-                    end.linkTo(parent.end)
-                })
-        })
+                        end.linkTo(parent.end)
+                    })
+            })
+        LoadingView(
+            stringResource(R.string.finishing_game),
+            uiState?.first == MainViewModel.UIState.FinishingGame
+        )
+    }
 }
 
 @ExperimentalAnimationApi

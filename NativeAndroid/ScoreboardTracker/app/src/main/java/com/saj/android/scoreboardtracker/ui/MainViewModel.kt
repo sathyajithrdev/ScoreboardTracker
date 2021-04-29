@@ -24,7 +24,11 @@ class MainViewModel : BaseViewModel() {
 
     enum class UIState {
         EnterScoreForAllSets,
-        UserLostGame
+        UserLostGame,
+        Loading,
+        Loaded,
+        FinishingGame,
+        Error
     }
 
     private val gameRepository = GameRepository()
@@ -76,10 +80,17 @@ class MainViewModel : BaseViewModel() {
         get() = _nextServerUserLiveData
 
     init {
+        _uiState.postValue(Pair(UIState.Loading, ""))
         viewModelScope.launch {
             gameRepository.getGroupId().collect {
-                _groupId.value = it
-                getUsersList(it)
+                if (it.isSuccess()) {
+                    it.data?.let { groupId ->
+                        _groupId.value = groupId
+                        getUsersList(groupId)
+                    }
+                } else {
+                    _uiState.postValue(Pair(UIState.Error, ""))
+                }
             }
         }
     }
@@ -89,10 +100,15 @@ class MainViewModel : BaseViewModel() {
         viewModelScope.launch {
             gameRepository.getUsersList().distinctUntilChanged()
                 .collect {
-                    _usersLiveData.value = it
-                    refreshGameStatistics(groupId, it)
-                    getCurrentOnGoingGame(groupId, it)
-                    setServeSequenceData(it)
+                    if (it.isSuccess()) {
+                        it.data?.let { users ->
+                            _usersLiveData.value = users
+                            refreshGameStatistics(groupId, users)
+                            getCurrentOnGoingGame(groupId, users)
+                            setServeSequenceData(users)
+
+                        }
+                    }
                 }
         }
     }
@@ -132,6 +148,7 @@ class MainViewModel : BaseViewModel() {
         if (validateCurrentGame()) {
             _onGoingGameLiveData.value?.let { game ->
                 _canSaveGameLiveData.postValue(false)
+                _uiState.value = Pair(UIState.FinishingGame, "")
                 val sortedData =
                     game.userScores.sortedByDescending { it.scores.count { score -> score == 0 } }
                         .sortedBy { it.scores.sumBy { score -> score ?: 0 } }
@@ -149,14 +166,17 @@ class MainViewModel : BaseViewModel() {
             game.winnerId = winner.userId
             game.loserId = loser.userId
             game.isCompleted = true
-            gameRepository.updateGameToServer(groupId, game).collect { isSuccess ->
-                if (isSuccess) {
+            gameRepository.updateGameToServer(groupId, game).collect {
+                if (it.isSuccess() && it.data == true) {
                     _winnerLiveData.value = Pair(true, winner)
                     addNewGame(game, groupId)
                     delay(6000)
                     _winnerLiveData.postValue(Pair(false, null))
                     _canSaveGameLiveData.postValue(true)
                     _uiState.value = Pair(UIState.UserLostGame, "${loser.name} lost the game}")
+                } else {
+                    _uiState.value = Pair(UIState.Error, "")
+                    _canSaveGameLiveData.postValue(true)
                 }
             }
         }
@@ -177,8 +197,10 @@ class MainViewModel : BaseViewModel() {
     private fun updateGame(groupId: String, game: Game) {
         viewModelScope.launch {
             gameRepository.updateGameToServer(groupId, game)
-                .collect { isSuccess ->
-                    Log.e("MainViewModel", "Update score to server is success : $isSuccess")
+                .collect {
+                    if (!it.isSuccess()) {
+                        _uiState.postValue(Pair(UIState.Error, ""))
+                    }
                 }
         }
     }
@@ -238,10 +260,15 @@ class MainViewModel : BaseViewModel() {
     private fun refreshGameStatistics(groupId: String, users: List<User>) {
         viewModelScope.launch {
             gameRepository.getAllCompletedGames(groupId, users).collect {
-                _completedGamesLiveData.value = it.sortedByDescending { g -> g.timestamp }
-                populateScoreStatistics()
-                populateUserResultData(it)
-                populateUserWinStats(it)
+                if (it.isSuccess()) {
+                    it.data?.let { games ->
+                        _completedGamesLiveData.value =
+                            games.sortedByDescending { g -> g.timestamp }
+                        populateScoreStatistics()
+                        populateUserResultData(games)
+                        populateUserWinStats(games)
+                    }
+                }
             }
         }
     }
@@ -290,13 +317,16 @@ class MainViewModel : BaseViewModel() {
     private fun getCurrentOnGoingGame(groupId: String, users: List<User>) {
         viewModelScope.launch {
             gameRepository.getCurrentOnGoingGame(groupId, users).collect {
-                _onGoingGameLiveData.value?.let { game ->
-                    if (game.gameId != it.gameId) {
-                        refreshGameStatistics(groupId, users)
+                if (it.isSuccess()) {
+                    _onGoingGameLiveData.value?.let { game ->
+                        if (game.gameId != it.data?.gameId) {
+                            refreshGameStatistics(groupId, users)
+                        }
                     }
+                    _onGoingGameLiveData.value = it.data
+                    calculateNextUserToServe()
+                    _uiState.value = Pair(UIState.Loaded, "")
                 }
-                _onGoingGameLiveData.value = it
-                calculateNextUserToServe()
             }
         }
     }
