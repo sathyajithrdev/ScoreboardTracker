@@ -41,12 +41,13 @@ import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.*
 import com.saj.android.scoreboardtracker.ui.theme.*
+import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
 @Composable
-fun Game(viewModel: MainViewModel, modifier: Modifier, onUserClick: (String) -> Unit) {
+fun Game(viewModel: MainViewModel, modifier: Modifier) {
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     ModalBottomSheetLayout(
         sheetState = state,
@@ -172,37 +173,35 @@ private fun UserScoreItem(
                 .fillMaxWidth()
                 .background(gradientBackground)
         ) {
-            val image = loadPicture(url = user.profileImageUrl).value
-            image?.let { img ->
-                Box(modifier = Modifier.size(150.dp, 200.dp)) {
-                    Image(
-                        bitmap = img.asImageBitmap(),
-                        "",
-                        modifier = Modifier
-                            .size(150.dp, 200.dp)
-                            .pointerInput(Unit) {
-                                detectTapGestures(onLongPress = {
-                                    coroutineScope.launch {
-                                        bottomSheetScaffoldState.show()
-                                    }
-                                })
-                            },
-                        contentScale = ContentScale.Crop,
-                    )
-                    recentPerformance(
-                        viewModel, user,
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(8.dp, 4.dp)
-                    )
-                    winStatsView(
-                        viewModel, user, Modifier
-                            .align(Alignment.BottomCenter)
-                            .fillMaxWidth()
-                            .background(TransparentBlack)
-                    )
-                    nextToServeUserView(viewModel, user, Modifier.align(Alignment.CenterStart))
-                }
+            Box(modifier = Modifier.size(150.dp, 200.dp)) {
+                CoilImage(
+                    data = user.profileImageUrl,
+                    contentDescription = "",
+                    fadeIn = true,
+                    modifier = Modifier
+                        .size(150.dp, 200.dp)
+                        .pointerInput(Unit) {
+                            detectTapGestures(onLongPress = {
+                                coroutineScope.launch {
+                                    bottomSheetScaffoldState.show()
+                                }
+                            })
+                        },
+                    contentScale = ContentScale.Crop,
+                )
+                recentPerformance(
+                    viewModel, user,
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(8.dp, 4.dp)
+                )
+                winStatsView(
+                    viewModel, user, Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .background(TransparentBlack)
+                )
+                nextToServeUserView(viewModel, user, Modifier.align(Alignment.CenterStart))
             }
             ScoreView(viewModel, user)
         }
@@ -347,22 +346,20 @@ fun WinnerAnimation(modifier: Modifier, viewModel: MainViewModel) {
     ) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             winnerData?.second?.let { user ->
-                val image = loadPicture(url = user.profileImageUrl).value
-                image?.let { img ->
-                    Image(
-                        bitmap = img.asImageBitmap(),
-                        "",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop,
-                    )
-                    AndroidView({ customView }) { view ->
-                        // View's been inflated - add logic here if necessary
-                        with(view) {
-                            setAnimation(R.raw.winner_animation)
-                            playAnimation()
-                            repeatCount = 10
-                            repeatMode = LottieDrawable.RESTART
-                        }
+                CoilImage(
+                    data = user.profileImageUrl,
+                    contentDescription = "",
+                    fadeIn = true,
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop,
+                )
+                AndroidView({ customView }) { view ->
+                    // View's been inflated - add logic here if necessary
+                    with(view) {
+                        setAnimation(R.raw.winner_animation)
+                        playAnimation()
+                        repeatCount = 10
+                        repeatMode = LottieDrawable.RESTART
                     }
                 }
             }

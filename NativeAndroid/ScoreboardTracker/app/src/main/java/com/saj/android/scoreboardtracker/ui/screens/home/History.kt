@@ -1,6 +1,5 @@
 package com.saj.android.scoreboardtracker.ui.screens.home
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,7 +11,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -20,9 +18,11 @@ import androidx.compose.ui.unit.sp
 import com.saj.android.scoreboardtracker.extensions.toUIFormat
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.ui.MainViewModel
-import com.saj.android.scoreboardtracker.ui.components.*
+import com.saj.android.scoreboardtracker.ui.components.ScoreboardCard
+import com.saj.android.scoreboardtracker.ui.components.ScoreboardDivider
 import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
+import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @Composable
@@ -61,15 +61,13 @@ private fun GameScoreItem(game: Game) {
                 .fillMaxWidth()
                 .background(gradientBackground)
         ) {
-            val image = loadPicture(url = winner?.profileImageUrl ?: "").value
-            image?.let { img ->
-                Image(
-                    bitmap = img.asImageBitmap(),
-                    "",
-                    modifier = Modifier.size(150.dp, scoreCardHeight),
-                    contentScale = ContentScale.Crop,
-                )
-            }
+            CoilImage(
+                data = winner?.profileImageUrl ?: "",
+                contentDescription = "",
+                fadeIn = true,
+                modifier = Modifier.size(150.dp, scoreCardHeight),
+                contentScale = ContentScale.Crop,
+            )
             Column(
                 modifier = Modifier
                     .padding(16.dp)
