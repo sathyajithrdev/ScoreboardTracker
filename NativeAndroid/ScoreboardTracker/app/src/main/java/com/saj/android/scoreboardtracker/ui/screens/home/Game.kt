@@ -2,9 +2,8 @@ package com.saj.android.scoreboardtracker.ui.screens.home
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.expandIn
-import androidx.compose.animation.shrinkOut
-import androidx.compose.foundation.Image
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -19,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -39,8 +37,14 @@ import com.airbnb.lottie.LottieDrawable
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
-import com.saj.android.scoreboardtracker.ui.components.*
-import com.saj.android.scoreboardtracker.ui.theme.*
+import com.saj.android.scoreboardtracker.ui.components.ScoreboardButton
+import com.saj.android.scoreboardtracker.ui.components.ScoreboardCard
+import com.saj.android.scoreboardtracker.ui.components.ScoreboardDivider
+import com.saj.android.scoreboardtracker.ui.components.VerticalGrid
+import com.saj.android.scoreboardtracker.ui.theme.Ocean8
+import com.saj.android.scoreboardtracker.ui.theme.SemiTransparentBlack
+import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
+import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -74,17 +78,19 @@ private fun ScoreboardContent(
 
     if (!isLoading) {
         ConstraintLayout(
-            modifier = modifier
-                .fillMaxSize()
-                .background(TransparentBlack),
+            modifier = modifier.background(TransparentBlack),
             content = {
                 val (finishButton, usersList, winnerAnimation) = createRefs()
-                Box(
-                    Modifier
-                        .constrainAs(finishButton) { bottom.linkTo(parent.bottom) }
-                        .fillMaxWidth()) {
-                    finishButton(viewModel)
-                }
+                finishButton(
+                    modifier = Modifier
+                        .constrainAs(finishButton) {
+                            bottom.linkTo(parent.bottom)
+                            start.linkTo(parent.start)
+                            end.linkTo(parent.end)
+                            height = Dimension.wrapContent
+                        }
+                        .fillMaxWidth(),
+                    viewModel = viewModel)
 
                 UsersList(
                     bottomSheetScaffoldState = bottomSheetScaffoldState,
@@ -116,13 +122,12 @@ private fun ScoreboardContent(
 
 @ExperimentalAnimationApi
 @Composable
-private fun finishButton(viewModel: MainViewModel) {
+private fun finishButton(modifier: Modifier, viewModel: MainViewModel) {
     val canSaveGame: Boolean by viewModel.canSaveGameLiveData.observeAsState(false)
-    AnimatedVisibility(visible = canSaveGame) {
+    AnimatedVisibility(visible = canSaveGame, modifier = modifier.fillMaxWidth()) {
         ScoreboardButton(
             onClick = { viewModel.onFinishGame() },
-            shape = RectangleShape,
-            modifier = Modifier.fillMaxWidth()
+            shape = RectangleShape
         ) {
             Text(
                 text = stringResource(R.string.finish),
@@ -341,8 +346,7 @@ fun WinnerAnimation(modifier: Modifier, viewModel: MainViewModel) {
     AnimatedVisibility(
         visible = winnerData?.first == true,
         modifier = modifier.size(300.dp, 300.dp),
-        enter = expandIn(),
-        exit = shrinkOut()
+        enter = fadeIn(), exit = fadeOut()
     ) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             winnerData?.second?.let { user ->

@@ -16,7 +16,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import java.lang.Exception
 
 class MainViewModel : BaseViewModel() {
 
@@ -155,25 +154,26 @@ class MainViewModel : BaseViewModel() {
                 val winner = sortedData.first().user
                 val loser = sortedData.last().user
                 _groupId.value?.let { groupId ->
-                    updateGameResult(groupId, game, winner, loser)
+                    updateCompletedGameResult(groupId, game, winner, loser)
                 }
             }
         }
     }
 
-    private fun updateGameResult(groupId: String, game: Game, winner: User, loser: User) {
+    private fun updateCompletedGameResult(groupId: String, game: Game, winner: User, loser: User) {
         viewModelScope.launch {
             game.winnerId = winner.userId
             game.loserId = loser.userId
             game.isCompleted = true
             gameRepository.updateGameToServer(groupId, game).collect {
                 if (it.isSuccess() && it.data == true) {
+                    _uiState.value = Pair(UIState.Loaded, "")
                     _winnerLiveData.value = Pair(true, winner)
                     addNewGame(game, groupId)
                     delay(6000)
                     _winnerLiveData.postValue(Pair(false, null))
                     _canSaveGameLiveData.postValue(true)
-                    _uiState.value = Pair(UIState.UserLostGame, "${loser.name} lost the game}")
+                    _uiState.value = Pair(UIState.UserLostGame, "${loser.name}")
                 } else {
                     _uiState.value = Pair(UIState.Error, "")
                     _canSaveGameLiveData.postValue(true)
@@ -190,7 +190,20 @@ class MainViewModel : BaseViewModel() {
         val newGame = Game("", false, "", "", Timestamp.now(), newUserScores)
 
         gameRepository.addNewGameToServer(groupId, newGame).collect {
-            Log.e(tag, "New game data is $newGame")
+            recalculateServeSequence()
+        }
+    }
+
+    private fun recalculateServeSequence() {
+        _usersServeSequenceLiveData.value?.let { serveSequence ->
+            if (serveSequence.any()) {
+                val sortedSequence = serveSequence.sortedBy { it.order }
+                sortedSequence.drop(1).forEachIndexed { index, it ->
+                    it.order = index + 1
+                }
+                sortedSequence.first().order = serveSequence.size
+                onSaveServeSequence()
+            }
         }
     }
 

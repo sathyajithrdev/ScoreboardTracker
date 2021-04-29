@@ -35,7 +35,12 @@ class MainActivity : BaseActivity() {
         viewModel.uiState.observe(this, {
             when (it?.first) {
                 MainViewModel.UIState.EnterScoreForAllSets -> showToast(getString(R.string.enter_score_for_all_set))
-                MainViewModel.UIState.UserLostGame -> showToast(it.second)
+                MainViewModel.UIState.UserLostGame -> showToast(
+                    getString(
+                        R.string.user_lost_game_info,
+                        it.second
+                    )
+                )
                 MainViewModel.UIState.Error -> {
                     if (hasNetworkConnection()) {
                         showToast(getString(R.string.something_went_wrong))

@@ -96,7 +96,14 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
                     backgroundColor = Color.Transparent
                 ) {
                     NavHost(navController, startDestination = Screen.Home.route) {
-                        composable(Screen.Home.route) { Game(viewModel, Modifier.padding(0.dp)) }
+                        composable(Screen.Home.route) {
+                            Game(
+                                viewModel,
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(0.dp, 0.dp, 0.dp, 60.dp)
+                            )
+                        }
                         composable(Screen.Stats.route) { Statistics(viewModel) }
                         composable(Screen.History.route) { History(viewModel) }
                     }

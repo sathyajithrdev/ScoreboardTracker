@@ -35,6 +35,7 @@ fun ServerSequenceSetupContent(
     bottomSheetScaffoldState: ModalBottomSheetState
 ) {
     val users: List<UserServeSequence>? by viewModel.usersServeSequenceLiveData.observeAsState()
+    val focusManager = LocalFocusManager.current
     Column(
         Modifier
             .background(CardBackgroundEnd)
@@ -61,6 +62,7 @@ fun ServerSequenceSetupContent(
                                 imeAction = ImeAction.Done,
                                 keyboardType = KeyboardType.Number
                             ),
+                            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
                             singleLine = true,
                             colors = TextFieldDefaults.outlinedTextFieldColors(textColor = Color.White),
                             modifier = Modifier

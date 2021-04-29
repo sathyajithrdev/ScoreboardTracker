@@ -11,5 +11,6 @@
     <string name="loading_wait">Loading, please wait…</string>
     <string name="something_went_wrong">Something went wrong, please try again later.</string>
     <string name="enter_score_for_all_set">Enter scores for all sets</string>
+    <string name="user_lost_game_info">%s lost the game</string>
 
 </resources>
