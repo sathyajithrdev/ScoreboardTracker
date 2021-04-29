@@ -80,7 +80,7 @@ private fun ScoreboardContent(
         ConstraintLayout(
             modifier = modifier.background(TransparentBlack),
             content = {
-                val (finishButton, usersList, winnerAnimation) = createRefs()
+                val (finishButton, lastWinStat, usersList, winnerAnimation) = createRefs()
                 finishButton(
                     modifier = Modifier
                         .constrainAs(finishButton) {
@@ -91,6 +91,14 @@ private fun ScoreboardContent(
                         }
                         .fillMaxWidth(),
                     viewModel = viewModel)
+
+                LastWinStatView(modifier = Modifier
+                    .constrainAs(lastWinStat) {
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
+                        height = Dimension.wrapContent
+                    }
+                    .fillMaxWidth(), viewModel = viewModel)
 
                 UsersList(
                     bottomSheetScaffoldState = bottomSheetScaffoldState,
@@ -122,8 +130,23 @@ private fun ScoreboardContent(
 
 @ExperimentalAnimationApi
 @Composable
+fun LastWinStatView(modifier: Modifier, viewModel: MainViewModel) {
+    val winStatMessage: String by viewModel.lastSetWinStatLiveData.observeAsState("")
+    AnimatedVisibility(visible = winStatMessage.isNotEmpty(), modifier = modifier.padding(16.dp)) {
+        Text(
+            text = winStatMessage,
+            color = Color.Green,
+            fontSize = 16.sp,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@ExperimentalAnimationApi
+@Composable
 private fun finishButton(modifier: Modifier, viewModel: MainViewModel) {
-    val canSaveGame: Boolean by viewModel.canSaveGameLiveData.observeAsState(false)
+    val canSaveGame: Boolean by viewModel.canFinishGameLiveData.observeAsState(false)
     AnimatedVisibility(visible = canSaveGame, modifier = modifier.fillMaxWidth()) {
         ScoreboardButton(
             onClick = { viewModel.onFinishGame() },
@@ -246,7 +269,7 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
                     ),
                     singleLine = true,
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier = Modifier.padding(6.dp, 0.dp),
+                    modifier = Modifier.padding(2.dp, 0.dp),
                     onValueChange = {
                         if (it.length <= 3) {
                             textValue.value = it

@@ -1,6 +1,5 @@
 package com.saj.android.scoreboardtracker.ui
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
@@ -16,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlin.math.floor
 
 class MainViewModel : BaseViewModel() {
 
@@ -62,9 +62,9 @@ class MainViewModel : BaseViewModel() {
 
     private val _groupId = MutableLiveData<String>()
 
-    private val _canSaveGameLiveData = MutableLiveData(false)
-    val canSaveGameLiveData: LiveData<Boolean>
-        get() = _canSaveGameLiveData
+    private val _canFinishGameLiveData = MutableLiveData(false)
+    val canFinishGameLiveData: LiveData<Boolean>
+        get() = _canFinishGameLiveData
 
     private val _uiState = MutableLiveData<Pair<UIState, String>?>()
     val uiState: LiveData<Pair<UIState, String>?>
@@ -77,6 +77,10 @@ class MainViewModel : BaseViewModel() {
     private val _nextServerUserLiveData = MutableLiveData<String>()
     val nextServerUserLiveData: LiveData<String>
         get() = _nextServerUserLiveData
+
+    private val _lastSetWinStatLiveData = MutableLiveData<String>()
+    val lastSetWinStatLiveData: LiveData<String>
+        get() = _lastSetWinStatLiveData
 
     init {
         _uiState.postValue(Pair(UIState.Loading, ""))
@@ -135,18 +139,46 @@ class MainViewModel : BaseViewModel() {
                     if (it.scores[index] != score) {
                         it.scores[index] = score
                         updateGame(groupId, game)
-                        _canSaveGameLiveData.postValue(isScoreEnteredForAllSets())
+                        setCanFinishGameLiveData()
                         calculateNextUserToServe()
+                        calculateLastSetWinStat()
                     }
                 }
             }
         }
     }
 
+    private fun setCanFinishGameLiveData() {
+        _canFinishGameLiveData.postValue(isScoreEnteredForAllSets())
+    }
+
+    private fun calculateLastSetWinStat() {
+        _onGoingGameLiveData.value?.let { game ->
+            val scoreToStandMessage =
+                if (game.userScores.all { it.scores.count { score -> score != null } == 6 }) {
+                    val totalScores =
+                        game.userScores.map {
+                            Pair(
+                                it.user,
+                                it.scores.sumBy { score -> score ?: 0 })
+                        }
+                            .sortedBy { it.second }
+                    val scoreToStand =
+                        floor((totalScores[1].second - 1 - totalScores[0].second) / 2.0).toInt()
+
+                    "${totalScores[0].first.name} will stand against ${totalScores[1].first.name} at $scoreToStand"
+
+                } else {
+                    ""
+                }
+            _lastSetWinStatLiveData.postValue(scoreToStandMessage)
+        }
+    }
+
     fun onFinishGame() {
         if (validateCurrentGame()) {
             _onGoingGameLiveData.value?.let { game ->
-                _canSaveGameLiveData.postValue(false)
+                _canFinishGameLiveData.postValue(false)
                 _uiState.value = Pair(UIState.FinishingGame, "")
                 val sortedData =
                     game.userScores.sortedByDescending { it.scores.count { score -> score == 0 } }
@@ -172,11 +204,11 @@ class MainViewModel : BaseViewModel() {
                     addNewGame(game, groupId)
                     delay(6000)
                     _winnerLiveData.postValue(Pair(false, null))
-                    _canSaveGameLiveData.postValue(true)
+                    _canFinishGameLiveData.postValue(true)
                     _uiState.value = Pair(UIState.UserLostGame, "${loser.name}")
                 } else {
                     _uiState.value = Pair(UIState.Error, "")
-                    _canSaveGameLiveData.postValue(true)
+                    _canFinishGameLiveData.postValue(true)
                 }
             }
         }
@@ -329,7 +361,7 @@ class MainViewModel : BaseViewModel() {
 
     private fun getCurrentOnGoingGame(groupId: String, users: List<User>) {
         viewModelScope.launch {
-            gameRepository.getCurrentOnGoingGame(groupId, users).collect {
+            gameRepository.getCurrentOnGoingGame(groupId, users).distinctUntilChanged().collect {
                 if (it.isSuccess()) {
                     _onGoingGameLiveData.value?.let { game ->
                         if (game.gameId != it.data?.gameId) {
@@ -338,6 +370,8 @@ class MainViewModel : BaseViewModel() {
                     }
                     _onGoingGameLiveData.value = it.data
                     calculateNextUserToServe()
+                    calculateLastSetWinStat()
+                    setCanFinishGameLiveData()
                     _uiState.value = Pair(UIState.Loaded, "")
                 }
             }
