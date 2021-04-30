@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
-import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +23,7 @@ import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.Pager
 import com.saj.android.scoreboardtracker.ui.components.PagerState
 import com.saj.android.scoreboardtracker.ui.theme.Ocean11
+import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import dev.chrisbanes.accompanist.coil.CoilImage
 
@@ -77,7 +78,8 @@ fun StatisticsPagerItem(statistics: Statistics, isSelected: Boolean) {
             .height(animateHeight)
             .padding(24.dp),
         shape = RoundedCornerShape(16.dp),
-        contentColor = MaterialTheme.colors.background
+        contentColor = Color.Transparent,
+        backgroundColor = Color.Transparent
     ) {
         Column {
             CoilImage(
@@ -86,7 +88,8 @@ fun StatisticsPagerItem(statistics: Statistics, isSelected: Boolean) {
                 fadeIn = true,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(360.dp),
+                    .height(360.dp)
+                    .background(TransparentBlack),
                 contentScale = ContentScale.Crop,
             )
 

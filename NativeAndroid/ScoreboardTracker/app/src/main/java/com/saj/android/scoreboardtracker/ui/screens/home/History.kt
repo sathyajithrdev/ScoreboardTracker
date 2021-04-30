@@ -36,9 +36,9 @@ fun GameList(viewModel: MainViewModel) {
     val items: List<Game> by viewModel.completedGamesLiveData.observeAsState(listOf())
     LazyColumn(
         Modifier
+            .background(TransparentBlack)
             .padding(16.dp, 32.dp, 16.dp, 0.dp)
-            .fillMaxSize()
-            .background(TransparentBlack),
+            .fillMaxSize(),
     ) {
         items(count = items.size, itemContent = { index ->
             GameScoreItem(items[index])
@@ -55,7 +55,7 @@ private fun GameScoreItem(game: Game) {
     val scoreCardHeight = 200.dp
     val winner = game.userScores.firstOrNull { us -> us.user.userId == game.winnerId }?.user
 
-    ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
+    ScoreboardCard(elevation = 4.dp) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -65,7 +65,9 @@ private fun GameScoreItem(game: Game) {
                 data = winner?.profileImageUrl ?: "",
                 contentDescription = "",
                 fadeIn = true,
-                modifier = Modifier.size(150.dp, scoreCardHeight),
+                modifier = Modifier
+                    .size(150.dp, scoreCardHeight)
+                    .background(TransparentBlack),
                 contentScale = ContentScale.Crop,
             )
             Column(

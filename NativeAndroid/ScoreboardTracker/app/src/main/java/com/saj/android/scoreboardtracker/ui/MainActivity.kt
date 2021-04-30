@@ -2,9 +2,15 @@ package com.saj.android.scoreboardtracker.ui
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.res.painterResource
 import androidx.core.view.WindowCompat
 import androidx.lifecycle.ViewModelProvider
 import com.saj.android.scoreboardtracker.R
@@ -20,13 +26,9 @@ class MainActivity : BaseActivity() {
 
         val viewModel = ViewModelProvider(this).get(MainViewModel::class.java)
         // This app draws behind the system bars, so we want to handle fitting system windows
-        WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContent {
-            val systemUiController = remember { SystemUiController(window) }
-            CompositionLocalProvider(LocalSysUiController provides systemUiController) {
-                ScoreboardApp(viewModel, onBackPressedDispatcher)
-            }
+            ScoreboardApp(viewModel, onBackPressedDispatcher)
         }
         setObservers(viewModel)
     }

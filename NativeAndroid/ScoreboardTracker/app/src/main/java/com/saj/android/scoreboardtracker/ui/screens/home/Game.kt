@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -92,14 +93,6 @@ private fun ScoreboardContent(
                         .fillMaxWidth(),
                     viewModel = viewModel)
 
-                LastWinStatView(modifier = Modifier
-                    .constrainAs(lastWinStat) {
-                        bottom.linkTo(parent.bottom)
-                        start.linkTo(parent.start)
-                        height = Dimension.wrapContent
-                    }
-                    .fillMaxWidth(), viewModel = viewModel)
-
                 UsersList(
                     bottomSheetScaffoldState = bottomSheetScaffoldState,
                     viewModel = viewModel,
@@ -120,6 +113,14 @@ private fun ScoreboardContent(
                         start.linkTo(parent.start)
                         end.linkTo(parent.end)
                     })
+
+                LastWinStatView(modifier = Modifier
+                    .constrainAs(lastWinStat) {
+                        bottom.linkTo(parent.bottom)
+                        start.linkTo(parent.start)
+                        height = Dimension.wrapContent
+                    }
+                    .fillMaxWidth(), viewModel = viewModel)
             })
         LoadingView(
             stringResource(R.string.finishing_game),
@@ -257,7 +258,7 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
     val game: Game? by viewModel.onGoingGameLiveData.observeAsState()
     game?.userScores?.firstOrNull { it.user.userId == user.userId }?.let { userScore ->
         val focusManager = LocalFocusManager.current
-        VerticalGrid(modifier = Modifier.padding(0.dp), 3) {
+        VerticalGrid(modifier = Modifier.padding(6.dp, 0.dp), 3) {
             userScore.scores.forEachIndexed { index, score ->
                 val textValue = remember { mutableStateOf("") }
                 textValue.value = score?.toString() ?: ""

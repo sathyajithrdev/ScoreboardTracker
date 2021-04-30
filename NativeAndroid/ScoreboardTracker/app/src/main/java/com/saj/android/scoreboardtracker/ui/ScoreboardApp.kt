@@ -40,72 +40,69 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
         Screen.History
     )
     ScoreboardTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            val image: Painter = painterResource(id = R.drawable.background)
-            Image(painter = image, contentDescription = "", modifier = Modifier.fillMaxSize())
-            Scaffold(
-                bottomBar = {
-                    BottomNavigation {
-                        val navBackStackEntry by navController.currentBackStackEntryAsState()
-                        val currentRoute = navBackStackEntry?.arguments?.getString(KEY_ROUTE)
-                        items.forEach { screen ->
 
-                            val selected = screen.route == currentRoute
+        Scaffold(
+            bottomBar = {
+                BottomNavigation {
+                    val navBackStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = navBackStackEntry?.arguments?.getString(KEY_ROUTE)
+                    items.forEach { screen ->
 
-                            val color by animateColorAsState(
-                                if (selected) {
-                                    ScoreboardTheme.colors.iconInteractive
-                                } else {
-                                    ScoreboardTheme.colors.iconInteractiveInactive
+                        val selected = screen.route == currentRoute
+
+                        val color by animateColorAsState(
+                            if (selected) {
+                                ScoreboardTheme.colors.iconInteractive
+                            } else {
+                                ScoreboardTheme.colors.iconInteractiveInactive
+                            }
+                        )
+
+                        BottomNavigationItem(
+                            icon = {
+                                Icon(
+                                    screen.icon,
+                                    contentDescription = null,
+                                    tint = color
+                                )
+                            },
+                            modifier = Modifier.background(Color.Black),
+                            alwaysShowLabel = true,
+                            label = {
+                                Text(
+                                    stringResource(screen.resourceId),
+                                    color = color
+                                )
+                            },
+                            selected = selected,
+                            onClick = {
+                                navController.navigate(screen.route) {
+                                    // Pop up to the start destination of the graph to
+                                    // avoid building up a large stack of destinations
+                                    // on the back stack as users select items
+                                    popUpTo = navController.graph.startDestination
+                                    // Avoid multiple copies of the same destination when
+                                    // reselecting the same item
+                                    launchSingleTop = true
                                 }
-                            )
-
-                            BottomNavigationItem(
-                                icon = {
-                                    Icon(
-                                        screen.icon,
-                                        contentDescription = null,
-                                        tint = color
-                                    )
-                                },
-                                modifier = Modifier.background(Color.Black),
-                                alwaysShowLabel = true,
-                                label = {
-                                    Text(
-                                        stringResource(screen.resourceId),
-                                        color = color
-                                    )
-                                },
-                                selected = selected,
-                                onClick = {
-                                    navController.navigate(screen.route) {
-                                        // Pop up to the start destination of the graph to
-                                        // avoid building up a large stack of destinations
-                                        // on the back stack as users select items
-                                        popUpTo = navController.graph.startDestination
-                                        // Avoid multiple copies of the same destination when
-                                        // reselecting the same item
-                                        launchSingleTop = true
-                                    }
-                                }
-                            )
-                        }
-                    }
-                },
-                backgroundColor = Color.Transparent
-            ) {
-                NavHost(navController, startDestination = Screen.Home.route) {
-                    composable(Screen.Home.route) {
-                        Game(
-                            viewModel,
-                            Modifier
-                                .fillMaxSize()
-                                .padding(0.dp, 0.dp, 0.dp, 60.dp)
+                            }
                         )
                     }
-                    composable(Screen.Stats.route) { Statistics(viewModel) }
-                    composable(Screen.History.route) { History(viewModel) }
                 }
+            },
+            backgroundColor = Color.Transparent
+        ) {
+            NavHost(navController, startDestination = Screen.Home.route) {
+                composable(Screen.Home.route) {
+                    Game(
+                        viewModel,
+                        Modifier
+                            .fillMaxSize()
+                            .padding(0.dp, 0.dp, 0.dp, 56.dp)
+                    )
+                }
+                composable(Screen.Stats.route) { Statistics(viewModel) }
+                composable(Screen.History.route) { History(viewModel) }
             }
         }
     }

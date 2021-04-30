@@ -16,6 +16,7 @@
 
     <style name="Theme.ScoreboardTracker.NoActionBar">
         <item name="windowActionBar">false</item>
+        <item name="android:windowBackground">@drawable/splash_screen_bg</item>
         <item name="windowNoTitle">true</item>
     </style>
 
