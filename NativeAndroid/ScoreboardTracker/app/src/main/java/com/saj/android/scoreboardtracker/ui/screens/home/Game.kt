@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -18,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -42,10 +44,7 @@ import com.saj.android.scoreboardtracker.ui.components.ScoreboardButton
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardCard
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardDivider
 import com.saj.android.scoreboardtracker.ui.components.VerticalGrid
-import com.saj.android.scoreboardtracker.ui.theme.Ocean8
-import com.saj.android.scoreboardtracker.ui.theme.SemiTransparentBlack
-import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
-import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
+import com.saj.android.scoreboardtracker.ui.theme.*
 import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -79,7 +78,7 @@ private fun ScoreboardContent(
 
     if (!isLoading) {
         ConstraintLayout(
-            modifier = modifier.background(TransparentBlack),
+            modifier = modifier.background(SemiTransparentBlack),
             content = {
                 val (finishButton, lastWinStat, usersList, winnerAnimation) = createRefs()
                 finishButton(
@@ -151,7 +150,8 @@ private fun finishButton(modifier: Modifier, viewModel: MainViewModel) {
     AnimatedVisibility(visible = canSaveGame, modifier = modifier.fillMaxWidth()) {
         ScoreboardButton(
             onClick = { viewModel.onFinishGame() },
-            shape = RectangleShape
+            shape = RectangleShape,
+            backgroundGradient = buttonBackgroundGradient
         ) {
             Text(
                 text = stringResource(R.string.finish),
@@ -196,7 +196,7 @@ private fun UserScoreItem(
 ) {
     val gradientBackground = Brush.horizontalGradient(backgroundGradient)
     val coroutineScope = rememberCoroutineScope()
-    ScoreboardCard(elevation = 4.dp, color = Color.Transparent) {
+    ScoreboardCard(elevation = 6.dp, color = Color.Transparent, shape = RoundedCornerShape(6.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -207,6 +207,7 @@ private fun UserScoreItem(
                     data = user.profileImageUrl,
                     contentDescription = "",
                     fadeIn = true,
+                    colorFilter = ColorFilter.tint(Color(0x1E000000)),
                     modifier = Modifier
                         .size(150.dp, 200.dp)
                         .pointerInput(Unit) {

@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +24,7 @@ import com.saj.android.scoreboardtracker.ui.MainViewModel
 import com.saj.android.scoreboardtracker.ui.components.Pager
 import com.saj.android.scoreboardtracker.ui.components.PagerState
 import com.saj.android.scoreboardtracker.ui.theme.Ocean11
+import com.saj.android.scoreboardtracker.ui.theme.SemiTransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
 import dev.chrisbanes.accompanist.coil.CoilImage
@@ -86,10 +88,11 @@ fun StatisticsPagerItem(statistics: Statistics, isSelected: Boolean) {
                 data = posterFullPath,
                 contentDescription = "",
                 fadeIn = true,
+                colorFilter = ColorFilter.tint(Color(0x1E000000)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(360.dp)
-                    .background(TransparentBlack),
+                    .background(SemiTransparentBlack),
                 contentScale = ContentScale.Crop,
             )
 

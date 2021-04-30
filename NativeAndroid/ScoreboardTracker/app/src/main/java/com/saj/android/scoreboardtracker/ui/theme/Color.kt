@@ -71,12 +71,14 @@ val FunctionalGrey = Color(0xfff6f6f6)
 val FunctionalDarkGrey = Color(0xff2e2e2e)
 val TransparentBlack = Color(0x40000000)
 
-val SemiTransparentBlack = Color(0xA1000000)
+val SemiTransparentBlack = Color(0x7000000)
 
 const val AlphaNearOpaque = 0.95f
 
-val CardBackgroundStart = Color(0xFF231D38)
-val CardBackgroundEnd = Color(0xFF18151F)
+val CardBackgroundStart = Color(0xFF1C1B1D)
+val CardBackgroundEnd = Color(0xFF18171B)
 
 
 val backgroundGradient = listOf(CardBackgroundStart, CardBackgroundEnd)
+
+val buttonBackgroundGradient = listOf(Color(0xFF223C57), Color(0xFF0D2064), Color(0xFF073375))
