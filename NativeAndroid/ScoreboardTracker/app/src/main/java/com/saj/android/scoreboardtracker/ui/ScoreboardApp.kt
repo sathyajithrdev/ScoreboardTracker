@@ -1,13 +1,8 @@
 package com.saj.android.scoreboardtracker.ui
 
-import androidx.activity.OnBackPressedDispatcher
 import androidx.annotation.StringRes
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.History
@@ -17,22 +12,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.*
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.ui.screens.home.Game
 import com.saj.android.scoreboardtracker.ui.screens.home.History
 import com.saj.android.scoreboardtracker.ui.screens.home.Statistics
 import com.saj.android.scoreboardtracker.ui.theme.ScoreboardTheme
-import dev.chrisbanes.accompanist.insets.ProvideWindowInsets
 
 @ExperimentalMaterialApi
 @Composable
-fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatcher) {
+fun ScoreboardApp(viewModel: MainViewModel) {
     val navController = rememberNavController()
     val items = listOf(
         Screen.Home,
@@ -50,7 +41,7 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
 
                         val selected = screen.route == currentRoute
 
-                        val color by animateColorAsState(
+                        val colorState by animateColorAsState(
                             if (selected) {
                                 ScoreboardTheme.colors.iconInteractive
                             } else {
@@ -63,7 +54,7 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
                                 Icon(
                                     screen.icon,
                                     contentDescription = null,
-                                    tint = color
+                                    tint = colorState
                                 )
                             },
                             modifier = Modifier.background(Color.Black),
@@ -71,7 +62,7 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
                             label = {
                                 Text(
                                     stringResource(screen.resourceId),
-                                    color = color
+                                    color = colorState
                                 )
                             },
                             selected = selected,
@@ -93,14 +84,7 @@ fun ScoreboardApp(viewModel: MainViewModel, backDispatcher: OnBackPressedDispatc
             backgroundColor = Color.Transparent
         ) {
             NavHost(navController, startDestination = Screen.Home.route) {
-                composable(Screen.Home.route) {
-                    Game(
-                        viewModel,
-                        Modifier
-                            .fillMaxSize()
-                            .padding(0.dp, 0.dp, 0.dp, 56.dp)
-                    )
-                }
+                composable(Screen.Home.route) { Game(viewModel) }
                 composable(Screen.Stats.route) { Statistics(viewModel) }
                 composable(Screen.History.route) { History(viewModel) }
             }

@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
@@ -19,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -40,25 +38,27 @@ import com.airbnb.lottie.LottieDrawable
 import com.saj.android.scoreboardtracker.R
 import com.saj.android.scoreboardtracker.model.*
 import com.saj.android.scoreboardtracker.ui.MainViewModel
-import com.saj.android.scoreboardtracker.ui.components.ScoreboardButton
-import com.saj.android.scoreboardtracker.ui.components.ScoreboardCard
-import com.saj.android.scoreboardtracker.ui.components.ScoreboardDivider
-import com.saj.android.scoreboardtracker.ui.components.VerticalGrid
+import com.saj.android.scoreboardtracker.ui.components.*
 import com.saj.android.scoreboardtracker.ui.theme.*
-import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
 @Composable
-fun Game(viewModel: MainViewModel, modifier: Modifier) {
+fun Game(viewModel: MainViewModel) {
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     ModalBottomSheetLayout(
         sheetState = state,
         scrimColor = SemiTransparentBlack,
         sheetContent = { ServerSequenceSetupContent(viewModel, state) }
     ) {
-        ScoreboardContent(state, modifier, viewModel)
+        ScoreboardContent(
+            bottomSheetScaffoldState = state,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(0.dp, 0.dp, 0.dp, 56.dp),
+            viewModel = viewModel
+        )
     }
 }
 
@@ -207,7 +207,6 @@ private fun UserScoreItem(
                     data = user.profileImageUrl,
                     contentDescription = "",
                     fadeIn = true,
-                    colorFilter = ColorFilter.tint(Color(0x1E000000)),
                     modifier = Modifier
                         .size(150.dp, 200.dp)
                         .pointerInput(Unit) {

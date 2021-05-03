@@ -18,11 +18,11 @@ import androidx.compose.ui.unit.sp
 import com.saj.android.scoreboardtracker.extensions.toUIFormat
 import com.saj.android.scoreboardtracker.model.Game
 import com.saj.android.scoreboardtracker.ui.MainViewModel
+import com.saj.android.scoreboardtracker.ui.components.CoilImage
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardCard
 import com.saj.android.scoreboardtracker.ui.components.ScoreboardDivider
 import com.saj.android.scoreboardtracker.ui.theme.TransparentBlack
 import com.saj.android.scoreboardtracker.ui.theme.backgroundGradient
-import dev.chrisbanes.accompanist.coil.CoilImage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @Composable
