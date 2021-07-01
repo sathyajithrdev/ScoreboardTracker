@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
+import androidx.navigation.NavHostController
 import com.airbnb.lottie.LottieAnimationView
 import com.airbnb.lottie.LottieDrawable
 import com.saj.android.scoreboardtracker.R
@@ -45,7 +46,7 @@ import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
 @Composable
-fun Game(viewModel: MainViewModel) {
+fun Game(viewModel: MainViewModel, navController: NavHostController) {
     val state = rememberModalBottomSheetState(ModalBottomSheetValue.Hidden)
     ModalBottomSheetLayout(
         sheetState = state,
@@ -57,7 +58,8 @@ fun Game(viewModel: MainViewModel) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(0.dp, 0.dp, 0.dp, 56.dp),
-            viewModel = viewModel
+            viewModel = viewModel,
+            navController
         )
     }
 }
@@ -68,7 +70,8 @@ fun Game(viewModel: MainViewModel) {
 private fun ScoreboardContent(
     bottomSheetScaffoldState: ModalBottomSheetState,
     modifier: Modifier,
-    viewModel: MainViewModel
+    viewModel: MainViewModel,
+    navController: NavHostController
 ) {
 
     val uiState by viewModel.uiState.observeAsState()
@@ -102,7 +105,8 @@ private fun ScoreboardContent(
                             start.linkTo(parent.start)
                             height = Dimension.fillToConstraints
                         }
-                        .fillMaxWidth())
+                        .fillMaxWidth(),
+                    navController)
 
                 WinnerAnimation(
                     viewModel = viewModel,
@@ -173,13 +177,14 @@ private fun finishButton(modifier: Modifier, viewModel: MainViewModel) {
 fun UsersList(
     bottomSheetScaffoldState: ModalBottomSheetState,
     viewModel: MainViewModel,
-    modifier: Modifier
+    modifier: Modifier,
+    navController: NavHostController
 ) {
     val users: List<User>? by viewModel.userLiveData.observeAsState()
     users?.let {
         LazyColumn(modifier.padding(16.dp, 32.dp, 16.dp, 0.dp)) {
             items(count = it.size, itemContent = { index ->
-                UserScoreItem(bottomSheetScaffoldState, viewModel, it[index])
+                UserScoreItem(bottomSheetScaffoldState, viewModel, it[index], navController)
                 ScoreboardDivider(thickness = 16.dp, color = Color.Transparent)
             })
         }
@@ -192,10 +197,12 @@ fun UsersList(
 private fun UserScoreItem(
     bottomSheetScaffoldState: ModalBottomSheetState,
     viewModel: MainViewModel,
-    user: User
+    user: User,
+    navController: NavHostController
 ) {
     val gradientBackground = Brush.horizontalGradient(backgroundGradient)
     val coroutineScope = rememberCoroutineScope()
+
     ScoreboardCard(elevation = 6.dp, color = Color.Transparent, shape = RoundedCornerShape(6.dp)) {
         Row(
             modifier = Modifier
@@ -204,19 +211,22 @@ private fun UserScoreItem(
         ) {
             Box(modifier = Modifier.size(150.dp, 200.dp)) {
                 CoilImage(
-                    data = user.profileImageUrl,
-                    contentDescription = "",
-                    fadeIn = true,
                     modifier = Modifier
                         .size(150.dp, 200.dp)
                         .pointerInput(Unit) {
-                            detectTapGestures(onLongPress = {
-                                coroutineScope.launch {
-                                    bottomSheetScaffoldState.show()
-                                }
-                            })
+                            detectTapGestures(
+                                onLongPress = {
+                                    coroutineScope.launch {
+                                        bottomSheetScaffoldState.show()
+                                    }
+                                },
+                                onTap = {
+                                    navController.navigate("user_statistics/${user.userId}")
+                                })
                         },
+                    data = user.profileImageUrl,
                     contentScale = ContentScale.Crop,
+                    contentDescription = "",
                 )
                 recentPerformance(
                     viewModel, user,
@@ -268,9 +278,10 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
                         imeAction = ImeAction.Done,
                         keyboardType = KeyboardType.Number
                     ),
+                    shape = RoundedCornerShape(4.dp),
                     singleLine = true,
                     keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-                    modifier = Modifier.padding(2.dp, 0.dp),
+                    modifier = Modifier.padding(2.dp),
                     onValueChange = {
                         if (it.length <= 3) {
                             textValue.value = it
@@ -304,7 +315,7 @@ private fun ScoreView(viewModel: MainViewModel, user: User) {
 }
 
 @Composable
-private fun recentPerformance(viewModel: MainViewModel, user: User, modifier: Modifier) {
+fun recentPerformance(viewModel: MainViewModel, user: User, modifier: Modifier) {
     val usersPerformance: List<UserRecentPerformance>? by viewModel.recentPerformanceLiveData.observeAsState()
     Row(
         modifier = modifier,
@@ -334,7 +345,7 @@ private fun recentPerformance(viewModel: MainViewModel, user: User, modifier: Mo
 }
 
 @Composable
-private fun winStatsView(viewModel: MainViewModel, user: User, modifier: Modifier) {
+fun winStatsView(viewModel: MainViewModel, user: User, modifier: Modifier) {
     val usersPerformance: List<UserWinStats>? by viewModel.winStatsLiveData.observeAsState()
     Row(
         modifier = modifier,
@@ -349,7 +360,7 @@ private fun winStatsView(viewModel: MainViewModel, user: User, modifier: Modifie
             Text(
                 modifier = Modifier.padding(4.dp),
                 text = it.runnerUp.toString(),
-                color = Color(0xFFFFC000)
+                color = RunnerUp
             )
             Text(
                 modifier = Modifier.padding(4.dp),
@@ -375,11 +386,10 @@ fun WinnerAnimation(modifier: Modifier, viewModel: MainViewModel) {
         Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
             winnerData?.second?.let { user ->
                 CoilImage(
-                    data = user.profileImageUrl,
-                    contentDescription = "",
-                    fadeIn = true,
                     modifier = Modifier.fillMaxSize(),
+                    data = user.profileImageUrl,
                     contentScale = ContentScale.Crop,
+                    contentDescription = "",
                 )
                 AndroidView({ customView }) { view ->
                     // View's been inflated - add logic here if necessary

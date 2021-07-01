@@ -3,6 +3,7 @@ package com.saj.android.scoreboardtracker.ui.screens.home
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -66,8 +67,9 @@ fun ServerSequenceSetupContent(
                             singleLine = true,
                             colors = TextFieldDefaults.outlinedTextFieldColors(textColor = Color.White),
                             modifier = Modifier
-                                .padding(6.dp, 0.dp)
+                                .padding(6.dp)
                                 .width(150.dp),
+                            shape = RoundedCornerShape(4.dp),
                             onValueChange = {
                                 if (it.length <= 1) {
                                     textValue.value = it

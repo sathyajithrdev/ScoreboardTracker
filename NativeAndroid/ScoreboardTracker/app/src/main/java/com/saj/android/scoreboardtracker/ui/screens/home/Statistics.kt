@@ -83,14 +83,13 @@ fun StatisticsPagerItem(statistics: Statistics, isSelected: Boolean) {
     ) {
         Column {
             CoilImage(
-                data = posterFullPath,
-                contentDescription = "",
-                fadeIn = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(360.dp)
                     .background(SemiTransparentBlack),
+                data = posterFullPath,
                 contentScale = ContentScale.Crop,
+                contentDescription = "",
             )
 
             Row(

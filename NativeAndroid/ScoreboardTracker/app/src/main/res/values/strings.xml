@@ -3,6 +3,7 @@
     <string name="game_route">Game</string>
     <string name="stats_route">Stats</string>
     <string name="history_route">History</string>
+    <string name="user_statistics_route">User Statistics</string>
     <string name="finish">Finish</string>
     <string name="save">Save</string>
 

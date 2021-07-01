@@ -62,13 +62,12 @@ private fun GameScoreItem(game: Game) {
                 .background(gradientBackground)
         ) {
             CoilImage(
-                data = winner?.profileImageUrl ?: "",
-                contentDescription = "",
-                fadeIn = true,
                 modifier = Modifier
                     .size(150.dp, scoreCardHeight)
                     .background(TransparentBlack),
+                data = winner?.profileImageUrl ?: "",
                 contentScale = ContentScale.Crop,
+                contentDescription = "",
             )
             Column(
                 modifier = Modifier

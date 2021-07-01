@@ -77,7 +77,7 @@ const val AlphaNearOpaque = 0.95f
 
 val CardBackgroundStart = Color(0xFF1C1B1D)
 val CardBackgroundEnd = Color(0xFF18171B)
-
+val RunnerUp = Color(0xFFFFC000)
 
 val backgroundGradient = listOf(CardBackgroundStart, CardBackgroundEnd)
 
